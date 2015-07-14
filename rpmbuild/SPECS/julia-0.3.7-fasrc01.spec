@@ -53,6 +53,34 @@ License: see COPYING file or upstream packaging
 Release: %{release_full}
 Prefix: %{_prefix}
 
+#
+# Macros for setting app data 
+# The first set can probably be left as is
+# the nil construct should be used for empty values
+#
+%define modulename %{name}-%{version}-%{release_short}
+%define appname %(test %{getenv:APPNAME} && echo "%{getenv:APPNAME}" || echo "%{name}")
+%define appversion %(test %{getenv:APPVERSION} && echo "%{getenv:APPVERSION}" || echo "%{version}")
+%define appdescription %{summary_static}
+%define type %{getenv:TYPE}
+%define specauthor %{getenv:FASRCSW_AUTHOR}
+%define builddate %(date)
+%define buildhost %(hostname)
+%define buildhostversion 1
+
+
+%define builddependencies %{nil}
+%define rundependencies %{builddependencies}
+%define buildcomments This Julia was built against the general compute processor architecture (JULIA_CPU_TARGET=core2) for Odyssey (i.e. general and interact partitions).  It will not work for login nodes and may not work on many nodes in serial_requeue 
+%define requestor %{nil}
+%define requestref %{nil}
+
+# apptags
+# For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
+# aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
+%define apptags %{nil} 
+%define apppublication %{nil}
+
 
 #
 # enter a description, often a paragraph; unless you prefix lines with spaces, 
@@ -78,8 +106,9 @@ Julia is a high-level, high-performance dynamic programming language for technic
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD 
 rm -rf %{name}
-tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-%{version}_cb9bcae93a.tar.*
+git clone https://github.com/JuliaLang/julia.git
 cd %{name}
+git checkout cb9bcae93a32b42cec02585c387396ff11836aed
 chmod -Rf a+rX,u+w,g-w,o-w .
 
 
@@ -139,8 +168,11 @@ cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}
 #	https://github.com/JuliaLang/julia/issues/7240#issuecomment-45972436
 #	$ echo override USE_SYSTEM_BLAS = 1 >> Make.user
 #sed -i -e 's?^OPENBLAS_TARGET_ARCH.*?OPENBLAS_TARGET_ARCH=BULLDOZER?' Make.inc
-sed -i -e 's?^USE_SYSTEM_BLAS=0?USE_SYSTEM_BLAS=1?' \
-       -e 's?^USE_SYSTEM_LAPACK=0?USE_SYSTEM_LAPACK=1?' Make.inc
+cat <<EOF > Make.user
+USE_SYSTEM_BLAS=1
+USE_SYSTEM_LAPACK=1
+JULIA_CPU_TARGET=core2
+EOF
 
 make %{?_smp_mflags}
 
@@ -273,6 +305,7 @@ cat > %{buildroot}/%{_prefix}/modulefile.lua <<EOF
 local helpstr = [[
 %{name}-%{version}-%{release_short}
 %{summary_static}
+%{buildcomments}
 ]]
 help(helpstr,"\n")
 
@@ -287,9 +320,33 @@ whatis("Description: %{summary_static}")
 --	end
 --end
 
--- environment changes (uncomment what's relevant)
+-- environment changes (uncomment what is relevant)
 prepend_path("PATH",                "%{_prefix}/usr/bin")
 EOF
+
+#------------------- App data file
+cat > $FASRCSW_DEV/appdata/%{modulename}.dat <<EOF
+appname             : %{appname}
+appversion          : %{appversion}
+description         : %{appdescription}
+module              : %{modulename}
+tags                : %{apptags}
+publication         : %{apppublication}
+modulename          : %{modulename}
+type                : %{type}
+compiler            : %{compiler}
+mpi                 : %{mpi}
+specauthor          : %{specauthor}
+builddate           : %{builddate}
+buildhost           : %{buildhost}
+buildhostversion    : %{buildhostversion}
+builddependencies   : %{builddependencies}
+rundependencies     : %{rundependencies}
+buildcomments       : %{buildcomments}
+requestor           : %{requestor}
+requestref          : %{requestref}
+EOF
+
 
 
 
@@ -300,7 +357,9 @@ EOF
 %defattr(-,root,root,-)
 
 %{_prefix}/*
+%{_prefix}/.git*
 %{_prefix}/.mailmap
+%{_prefix}/.travis.yml
 
 
 #------------------- scripts (there should be no need to change these) --------

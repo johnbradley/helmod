@@ -88,7 +88,7 @@ This package has been compiled for openMP with a default thread (core/cpu) limit
 
 %define builddependencies %{nil}
 %define rundependencies %{builddependencies}
-%define buildcomments Boosted max kmer length to 127
+%define buildcomments Boosted max kmer length to 127, openMP build, set OMP_THREAD_LIMIT to 1 by default
 %define requestor Lauren O'Connell <aloconnel@fas.harvard.edu>
 %define requestref RCRT:81076
 
@@ -231,7 +231,7 @@ setenv("OMP_THREAD_LIMIT",     "1")
 EOF
 
 #------------------- App data file
-cat > $FASRCSW_DEV/appdata/%{modulename}.yaml <<EOF
+cat > $FASRCSW_DEV/appdata/%{modulename}.%{type}.dat <<EOF
 ---
 appname             : %{appname}
 appversion          : %{appversion}
@@ -241,6 +241,8 @@ tags                : %{apptags}
 publication         : %{apppublication}
 modulename          : %{modulename}
 type                : %{type}
+compiler            : %{compiler}
+mpi                 : %{mpi}
 specauthor          : %{specauthor}
 builddate           : %{builddate}
 buildhost           : %{buildhost}

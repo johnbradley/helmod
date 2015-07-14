@@ -30,7 +30,7 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static breseq version 0.25
+%define summary_static VAPOR version 2.4.0
 Summary: %{summary_static}
 
 #
@@ -54,16 +54,6 @@ License: see COPYING file or upstream packaging
 Release: %{release_full}
 Prefix: %{_prefix}
 
-
-#
-# enter a description, often a paragraph; unless you prefix lines with spaces, 
-# rpm will format it, so no need to worry about the wrapping
-#
-# NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
-#
-%description
-breseq is a computational pipeline for finding mutations relative to a reference sequence in short-read DNA 
-re-sequencing data for microbial sized genomes.
 
 #
 # Macros for setting app data 
@@ -92,6 +82,17 @@ re-sequencing data for microbial sized genomes.
 # aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
 %define apptags %{nil} 
 %define apppublication %{nil}
+
+
+#
+# enter a description, often a paragraph; unless you prefix lines with spaces, 
+# rpm will format it, so no need to worry about the wrapping
+#
+# NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
+#
+%description
+VAPOR is the Visualization and Analysis Platform for Ocean, Atmosphere, and Solar Researchers.  VAPOR provides an interactive 
+3D visualization environment that can also produce animations and still frame images. This module has been built by Plamen G Krastev.
 
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
@@ -137,31 +138,25 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
-for m in %{builddependencies}
-do
-    module load ${m}
-done
 
-
-
-./configure --prefix=%{_prefix} \
-	--program-prefix= \
-	--exec-prefix=%{_prefix} \
-	--bindir=%{_prefix}/bin \
-	--sbindir=%{_prefix}/sbin \
-	--sysconfdir=%{_prefix}/etc \
-	--datadir=%{_prefix}/share \
-	--includedir=%{_prefix}/include \
-	--libdir=%{_prefix}/lib64 \
-	--libexecdir=%{_prefix}/libexec \
-	--localstatedir=%{_prefix}/var \
-	--sharedstatedir=%{_prefix}/var/lib \
-	--mandir=%{_prefix}/share/man \
-	--infodir=%{_prefix}/share/info
+#./configure --prefix=%{_prefix} \
+#	--program-prefix= \
+#	--exec-prefix=%{_prefix} \
+#	--bindir=%{_prefix}/bin \
+#	--sbindir=%{_prefix}/sbin \
+#	--sysconfdir=%{_prefix}/etc \
+#	--datadir=%{_prefix}/share \
+#	--includedir=%{_prefix}/include \
+#	--libdir=%{_prefix}/lib64 \
+#	--libexecdir=%{_prefix}/libexec \
+#	--localstatedir=%{_prefix}/var \
+#	--sharedstatedir=%{_prefix}/var/lib \
+#	--mandir=%{_prefix}/share/man \
+#	--infodir=%{_prefix}/share/info
 
 #if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
 #percent sign) to build in parallel
-make
+#make
 
 
 
@@ -190,11 +185,28 @@ make
 # (A spec file cannot change it, thus it is not inside $FASRCSW_DEV.)
 #
 
+#umask 022
+#cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
+#echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
+#mkdir -p %{buildroot}/%{_prefix}
+#make install DESTDIR=%{buildroot}
+
+# Standard stuff.
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
-make install DESTDIR=%{buildroot}
+
+# Make the symlink.
+sudo mkdir -p "$(dirname %{_prefix})"
+test -L "%{_prefix}" && sudo rm "%{_prefix}" || true
+sudo ln -s "%{buildroot}/%{_prefix}" "%{_prefix}"
+
+#make install
+./vapor-install.csh %{_prefix}
+
+# Clean up the symlink.  (The parent dir may be left over, oh well.)
+sudo rm "%{_prefix}"
 
 
 #(this should not need to be changed)
@@ -265,6 +277,7 @@ cat > %{buildroot}/%{_prefix}/modulefile.lua <<EOF
 local helpstr = [[
 %{name}-%{version}-%{release_short}
 %{summary_static}
+%{buildcomments}
 ]]
 help(helpstr,"\n")
 
@@ -282,19 +295,31 @@ for i in string.gmatch("%{rundependencies}","%%S+") do
     end
 end
 
-
-load("ssaha2/2.5.5-fasrc01")
-load("R/3.1.0-fasrc01")
-
 ---- environment changes (uncomment what is relevant)
+setenv("VAPOR_HOME",               "%{_prefix}")
 prepend_path("PATH",               "%{_prefix}/bin")
+prepend_path("CPATH",              "%{_prefix}/lib/python2.7/site-packages/numpy/distutils/tests/f2py_f90_ext/include")
+prepend_path("CPATH",              "%{_prefix}/lib/python2.7/site-packages/numpy/core/include")
+prepend_path("CPATH",              "%{_prefix}/lib/python2.7/site-packages/numpy/numarray/include")
 prepend_path("CPATH",              "%{_prefix}/include")
+prepend_path("FPATH",              "%{_prefix}/lib/python2.7/site-packages/numpy/distutils/tests/f2py_f90_ext/include")
+prepend_path("FPATH",              "%{_prefix}/lib/python2.7/site-packages/numpy/core/include")
+prepend_path("FPATH",              "%{_prefix}/lib/python2.7/site-packages/numpy/numarray/include")
 prepend_path("FPATH",              "%{_prefix}/include")
+prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib")
+prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib/python2.7/site-packages/numpy/lib")
+prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib/python2.7/site-packages/numpy/core/lib")
+prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib/python2.7/site-packages/scipy/lib")
+prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
+prepend_path("LIBRARY_PATH",       "%{_prefix}/lib/python2.7/site-packages/numpy/lib")
+prepend_path("LIBRARY_PATH",       "%{_prefix}/lib/python2.7/site-packages/numpy/core/lib")
+prepend_path("LIBRARY_PATH",       "%{_prefix}/lib/python2.7/site-packages/scipy/lib")
+prepend_path("MANPATH",            "%{_prefix}/share/man")
+prepend_path("PYTHONPATH",         "%{_prefix}/lib/python2.7/site-packages")
 EOF
 
 #------------------- App data file
-cat > $FASRCSW_DEV/appdata/%{modulename}.yaml <<EOF
----
+cat > $FASRCSW_DEV/appdata/%{modulename}.dat <<EOF
 appname             : %{appname}
 appversion          : %{appversion}
 description         : %{appdescription}
@@ -303,6 +328,8 @@ tags                : %{apptags}
 publication         : %{apppublication}
 modulename          : %{modulename}
 type                : %{type}
+compiler            : %{compiler}
+mpi                 : %{mpi}
 specauthor          : %{specauthor}
 builddate           : %{builddate}
 buildhost           : %{buildhost}
