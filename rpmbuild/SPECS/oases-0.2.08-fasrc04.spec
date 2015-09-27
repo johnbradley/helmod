@@ -85,6 +85,9 @@ This package has been compiled for openMP with a default thread (core/cpu) limit
 %define builddate %(date)
 %define buildhost %(hostname)
 %define buildhostversion 1
+%define compiler %( if [[ %{getenv:TYPE} == "Comp" || %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_COMPS}" ]]; then echo "%{getenv:FASRCSW_COMPS}"; fi; else echo "system"; fi)
+%define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
+
 
 
 %define builddependencies %{nil}
@@ -136,17 +139,13 @@ cd %{_bd}
 %build
 
 #
-# FIXME
 #
 # configure and make the software here; the default below is for standard 
 # GNU-toolchain style things
 # 
 
-#(leave this here)
 %include fasrcsw_module_loads.rpmmacros
 
-##prerequisite apps (uncomment and tweak if necessary)
-#module load NAME/VERSION-RELEASE
 
 cd %{_topdir}/BUILD/%{_bd}
 # Substitute hard coded gcc when intel is in session
@@ -247,7 +246,7 @@ for i in string.gmatch("%{rundependencies}","%%S+") do
 end
 
 
----- environment changes (uncomment what's relevant)
+---- environment changes (uncomment what is relevant)
 prepend_path("PATH",                "%{_prefix}/bin")
 setenv("OASES_HOME",                "%{_prefix}")
 setenv("OMP_THREAD_LIMIT",          "1")
@@ -257,7 +256,6 @@ EOF
 
 #------------------- App data file
 cat > $FASRCSW_DEV/appdata/%{modulename}.%{type}.dat <<EOF
----
 appname             : %{appname}
 appversion          : %{appversion}
 description         : %{appdescription}

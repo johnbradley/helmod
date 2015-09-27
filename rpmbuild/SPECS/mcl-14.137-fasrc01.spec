@@ -1,5 +1,5 @@
 #------------------- package info ----------------------------------------------
-
+#
 #
 # enter the simple app name, e.g. myapp
 #
@@ -30,15 +30,15 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static OpenImageIO is a library for reading and writing images, and a bunch of related classes, utilities, and applications. 
+%define summary_static MCL - a cluster algorithm for graphs 
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: https://github.com/OpenImageIO/oiio/archive/RB-1.5.zip
-Source: RB-1.5.zip
+URL: http://micans.org/mcl/src/mcl-14-137.tar.gz 
+Source: %{name}-14-137.tar.gz
 
 #
 # there should be no need to change the following
@@ -56,15 +56,6 @@ Prefix: %{_prefix}
 
 
 #
-# enter a description, often a paragraph; unless you prefix lines with spaces, 
-# rpm will format it, so no need to worry about the wrapping
-#
-# NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
-#
-%description
-OpenImageIO is a library for reading and writing images, and a bunch of related classes, utilities, and applications.  There is a particular emphasis on formats and functionality used in professional, large-scale animation and visual effects work for film.  OpenImageIO is used extensively in animation and VFX studios all over the world, and is also incorporated into several commercial products.
-
-#
 # Macros for setting app data 
 # The first set can probably be left as is
 # the nil construct should be used for empty values
@@ -78,20 +69,32 @@ OpenImageIO is a library for reading and writing images, and a bunch of related 
 %define builddate %(date)
 %define buildhost %(hostname)
 %define buildhostversion 1
+%define compiler %( if [[ %{getenv:TYPE} == "Comp" || %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_COMPS}" ]]; then echo "%{getenv:FASRCSW_COMPS}"; fi; else echo "system"; fi)
+%define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
 
-%define builddependencies cmake/2.8.12.2-fasrc01 openexr/1.4.0-fasrc01 boost/1.54.0-fasrc02
-%define rundependencies  openexr/1.4.0-fasrc02 boost/1.54.0-fasrc02
+%define builddependencies %{nil}
+%define rundependencies %{builddependencies}
 %define buildcomments %{nil}
-%define requestor Adam West <awest@physics.harvard.edu>
-%define requestref RCRT:80269
+%define requestor Cheryl Andam <candam@hsph.harvard.edu>
+%define requestref %{nil}
 
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
 # aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
-%define apptags aci-ref-app-category:Libraries; aci-ref-app-tag:Image analysis
+%define apptags aci-ref-app-category:Applications; aci-ref-app-tag:Network analysis 
 %define apppublication %{nil}
 
+
+
+#
+# enter a description, often a paragraph; unless you prefix lines with spaces, 
+# rpm will format it, so no need to worry about the wrapping
+#
+# NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
+#
+%description
+The MCL algorithm is short for the Markov Cluster Algorithm, a fast and scalable unsupervised cluster algorithm for graphs (also known as networks) based on simulation of (stochastic) flow in graphs. The algorithm was invented/discovered by Stijn van Dongen (that is, me) at the Centre for Mathematics and Computer Science (also known as CWI) in the Netherlands. The PhD thesis Graph clustering by flow simulation is centered around this algorithm, the main topics being the mathematical theory behind it, its position in cluster analysis and graph clustering, issues concerning scalability, implementation, and benchmarking, and performance criteria for graph clustering in general. 
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
 
@@ -107,9 +110,9 @@ OpenImageIO is a library for reading and writing images, and a bunch of related 
 
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD 
-rm -rf oiio-RB-%{version}
-unzip "$FASRCSW_DEV"/rpmbuild/SOURCES/RB-%{version}.zip
-cd oiio-RB-%{version}
+rm -rf %{name}-%{version}
+tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-14-137.tar.*
+cd %{name}-14-137
 chmod -Rf a+rX,u+w,g-w,o-w .
 
 
@@ -134,20 +137,26 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 #module load NAME/VERSION-RELEASE
 
 umask 022
-cd "$FASRCSW_DEV"/rpmbuild/BUILD/oiio-RB-%{version}
+cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-14-137
 
-for m in %{builddependencies}
-do
-    module load ${m}
-done
 
-rm -rf build; mkdir build; cd build
+./configure --prefix=%{_prefix} \
+	--program-prefix= \
+	--exec-prefix=%{_prefix} \
+	--bindir=%{_prefix}/bin \
+	--sbindir=%{_prefix}/sbin \
+	--sysconfdir=%{_prefix}/etc \
+	--datadir=%{_prefix}/share \
+	--includedir=%{_prefix}/include \
+	--libdir=%{_prefix}/lib64 \
+	--libexecdir=%{_prefix}/libexec \
+	--localstatedir=%{_prefix}/var \
+	--sharedstatedir=%{_prefix}/var/lib \
+	--mandir=%{_prefix}/share/man \
+	--infodir=%{_prefix}/share/info
 
-# test "%{comp_name}" == 'intel' && export CC="$CC -diag-disable 177"
-cmake -DCMAKE_INSTALL_PREFIX=%{_prefix} -DCMAKE_INCLUDE_PATH:STRING="$ILMBASE_INCLUDE;$OPENEXR_HOME/include;$BOOST_INCLUDE;$FFMPEG_INCLUDE" -DCMAKE_LIBRARY_PATH:STRING="$ILMBASE_LIB;$OPENEXR_HOME/lib;$BOOST_LIB;$FFMPEG_LIB" ..
-
-# Unused function causes errors for intel
-# sed -i -e '289,293{;s?^?//?}' ../src/libOpenImageIO/exif.cpp
+#if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
+#percent sign) to build in parallel
 make
 
 
@@ -178,7 +187,7 @@ make
 #
 
 umask 022
-cd "$FASRCSW_DEV"/rpmbuild/BUILD/oiio-RB-%{version}/build
+cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-14-137
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
 make install DESTDIR=%{buildroot}
@@ -252,6 +261,7 @@ cat > %{buildroot}/%{_prefix}/modulefile.lua <<EOF
 local helpstr = [[
 %{name}-%{version}-%{release_short}
 %{summary_static}
+%{buildcomments}
 ]]
 help(helpstr,"\n")
 
@@ -271,31 +281,17 @@ end
 
 
 ---- environment changes (uncomment what is relevant)
---setenv("TEMPLATE_HOME",       "%{_prefix}")
+setenv("MCL_HOME",       "%{_prefix}")
 
---prepend_path("PATH",                "%{_prefix}/bin")
---prepend_path("CPATH",               "%{_prefix}/include")
---prepend_path("FPATH",               "%{_prefix}/include")
---prepend_path("INFOPATH",            "%{_prefix}/info")
---prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib")
---prepend_path("LIBRARY_PATH",        "%{_prefix}/lib")
---prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib64")
---prepend_path("LIBRARY_PATH",        "%{_prefix}/lib64")
---prepend_path("MANPATH",             "%{_prefix}/man")
---prepend_path("PKG_CONFIG_PATH",     "%{_prefix}/pkgconfig")
---prepend_path("PATH",                "%{_prefix}/sbin")
---prepend_path("INFOPATH",            "%{_prefix}/share/info")
---prepend_path("MANPATH",             "%{_prefix}/share/man")
---prepend_path("PYTHONPATH",          "%{_prefix}/site-packages")
+prepend_path("PATH",                "%{_prefix}/bin")
+prepend_path("MANPATH",             "%{_prefix}/share/man")
 EOF
 
 #------------------- App data file
 cat > $FASRCSW_DEV/appdata/%{modulename}.%{type}.dat <<EOF
----
 appname             : %{appname}
 appversion          : %{appversion}
 description         : %{appdescription}
-module              : %{modulename}
 tags                : %{apptags}
 publication         : %{apppublication}
 modulename          : %{modulename}
