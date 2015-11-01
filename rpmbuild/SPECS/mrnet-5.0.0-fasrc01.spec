@@ -138,6 +138,12 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
+
+sed -i -e 's?\$(MKDIR_P) \$\$dir ;?$(MKDIR_P) $(DESTDIR)$$dir ;?' \
+       -e 's?chmod 755 \$\$dir ;?chmod 755 $(DESTDIR)$$dir ;?' \
+       -e 's?\$(INSTALL) -m 644 \$< \$(@D)?$(INSTALL) -m 644 $< $(DESTDIR)$(@D)?' \
+       -e 's?\$(INSTALL) -m 755 \$(TARGETS) \$(ILIBDIR)/?$(INSTALL) -m 755 $(TARGETS) $(DESTDIR)$(ILIBDIR)/?' external/libi/conf/Makefile.in 
+
 ./configure --prefix=%{_prefix}
 #	--program-prefix= \
 #	--exec-prefix=%{_prefix} \
@@ -183,33 +189,33 @@ make %{?_smp_mflags}
 # (A spec file cannot change it, thus it is not inside $FASRCSW_DEV.)
 #
 
-#umask 022
-#cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
-#echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
-#mkdir -p %{buildroot}/%{_prefix}
-#make install DESTDIR=%{buildroot}
-
-# Standard stuff.
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
+make install DESTDIR=%{buildroot}
 
-# Make the symlink.
-sudo mkdir -p "$(dirname %{_prefix})"
-test -L "%{_prefix}" && sudo rm "%{_prefix}" || true
-sudo ln -s "%{buildroot}/%{_prefix}" "%{_prefix}"
-
-make install
+# Standard stuff.
+#umask 022
+#cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
+#echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
+#mkdir -p %{buildroot}/%{_prefix}
+#
+## Make the symlink.
+#sudo mkdir -p "$(dirname %{_prefix})"
+#test -L "%{_prefix}" && sudo rm "%{_prefix}" || true
+#sudo ln -s "%{buildroot}/%{_prefix}" "%{_prefix}"
+#
+#make install
 
 # Libi install
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}/external/libi
 ./configure --prefix=%{_prefix}
 make all
-make install
+make install DESTDIR=%{buildroot}
 
 # Clean up the symlink. (The parent dir may be left over, oh well.)
-sudo rm "%{_prefix}"
+# sudo rm "%{_prefix}"
 
 
 #(this should not need to be changed)

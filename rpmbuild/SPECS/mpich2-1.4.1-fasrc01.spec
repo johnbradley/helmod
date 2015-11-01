@@ -79,6 +79,9 @@ MPICH is a high-performance and widely portable implementation of the Message Pa
 %define builddate %(date)
 %define buildhost %(hostname)
 %define buildhostversion 1
+%define compiler %( if [[ %{getenv:TYPE} == "Comp" || %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_COMPS}" ]]; then echo "%{getenv:FASRCSW_COMPS}"; fi; else echo "system"; fi)
+%define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
+
 
 
 %define builddependencies %{nil}
@@ -137,27 +140,8 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
-for m in %{builddependencies}
-do
-    module load ${m}
-done
 
-
-
-./configure --prefix=%{_prefix} --enable-shared --enable-f77 --enable-fc --enable-cxx \
-	--program-prefix= \
-	--exec-prefix=%{_prefix} \
-	--bindir=%{_prefix}/bin \
-	--sbindir=%{_prefix}/sbin \
-	--sysconfdir=%{_prefix}/etc \
-	--datadir=%{_prefix}/share \
-	--includedir=%{_prefix}/include \
-	--libdir=%{_prefix}/lib64 \
-	--libexecdir=%{_prefix}/libexec \
-	--localstatedir=%{_prefix}/var \
-	--sharedstatedir=%{_prefix}/var/lib \
-	--mandir=%{_prefix}/share/man \
-	--infodir=%{_prefix}/share/info
+./configure --prefix=%{_prefix} --enable-shared --enable-f77 --enable-fc --enable-cxx 
 
 #if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
 #percent sign) to build in parallel
@@ -189,28 +173,16 @@ make
 # (A spec file cannot change it, thus it is not inside $FASRCSW_DEV.)
 #
 
-#umask 022
-#cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
-#echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
-#mkdir -p %{buildroot}/%{_prefix}
-#make install DESTDIR=%{buildroot}
-
-# Standard stuff.
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
 
-# Make the symlink.
 sudo mkdir -p "$(dirname %{_prefix})"
 test -L "%{_prefix}" && sudo rm "%{_prefix}" || true
 sudo ln -s "%{buildroot}/%{_prefix}" "%{_prefix}"
 
 make install
-
-# Clean up the symlink.  (The parent dir may be left over, oh well.)
-sudo rm "%{_prefix}"
-
 
 #(this should not need to be changed)
 #these files are nice to have; %%doc is not as prefix-friendly as I would like
@@ -308,11 +280,18 @@ prepend_path("LIBRARY_PATH",       "%{_prefix}/lib64")
 prepend_path("MANPATH",            "%{_prefix}/share/man")
 prepend_path("PKG_CONFIG_PATH",    "%{_prefix}/lib64/pkgconfig")
 prepend_path("PATH",               "%{_prefix}/sbin")
+
+local mroot = os.getenv("MODULEPATH_ROOT")
+local mdir = pathJoin(mroot, "MPI/%{comp_name}/%{comp_version}-%{comp_release}/%{name}/%{version}-%{release_short}")
+prepend_path("MODULEPATH", mdir)
+setenv("FASRCSW_MPI_NAME"   , "%{name}")
+setenv("FASRCSW_MPI_VERSION", "%{version}")
+setenv("FASRCSW_MPI_RELEASE", "%{release_short}")
+family("MPI")
 EOF
 
 #------------------- App data file
 cat > $FASRCSW_DEV/appdata/%{modulename}.%{type}.dat <<EOF
----
 appname             : %{appname}
 appversion          : %{appversion}
 description         : %{appdescription}

@@ -277,12 +277,12 @@ end
 
 ---- environment changes (uncomment what is relevant)
 setenv("MPC_HOME",                  "%{_prefix}")
-setenv("MPC_LIB",                   "%{_prefix}/lib")
+setenv("MPC_LIB",                   "%{_prefix}/lib64")
 setenv("MPC_INCLUDE",               "%{_prefix}/include")
 prepend_path("CPATH",               "%{_prefix}/include")
 prepend_path("FPATH",               "%{_prefix}/include")
-prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib")
-prepend_path("LIBRARY_PATH",        "%{_prefix}/lib")
+prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib64")
+prepend_path("LIBRARY_PATH",        "%{_prefix}/lib64")
 prepend_path("INFOPATH",            "%{_prefix}/share/info")
 EOF
 

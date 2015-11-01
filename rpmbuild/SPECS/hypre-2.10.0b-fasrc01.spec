@@ -37,7 +37,7 @@ Summary: %{summary_static}
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-#URL: http://...
+URL: https://computation.llnl.gov/project/linear_solvers/download/hypre-2.10.0b_reg.php
 Source: %{name}-%{version}.tar.gz
 
 #
@@ -69,6 +69,9 @@ Prefix: %{_prefix}
 %define builddate %(date)
 %define buildhost %(hostname)
 %define buildhostversion 1
+%define compiler %( if [[ %{getenv:TYPE} == "Comp" || %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_COMPS}" ]]; then echo "%{getenv:FASRCSW_COMPS}"; fi; else echo "system"; fi)
+%define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
+
 
 
 %define builddependencies %{nil}
@@ -80,7 +83,7 @@ Prefix: %{_prefix}
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
 # aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
-%define apptags %{nil} 
+%define apptags aci-ref-app-category:Libraries; aci-ref-app-tag:Math
 %define apppublication %{nil}
 
 
@@ -190,14 +193,14 @@ echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
 
 # Make the symlink.
-sudo mkdir -p "$(dirname %{_prefix})"
-test -L "%{_prefix}" && sudo rm "%{_prefix}" || true
-sudo ln -s "%{buildroot}/%{_prefix}" "%{_prefix}"
+# sudo mkdir -p "$(dirname %{_prefix})"
+# test -L "%{_prefix}" && sudo rm "%{_prefix}" || true
+# sudo ln -s "%{buildroot}/%{_prefix}" "%{_prefix}"
 
-make install
+make install DESTDIR=%{buildroot}
 
 # Clean up the symlink.  (The parent dir may be left over, oh well.)
-sudo rm "%{_prefix}"
+# sudo rm "%{_prefix}"
 
 #(this should not need to be changed)
 #these files are nice to have; %%doc is not as prefix-friendly as I would like
@@ -293,7 +296,7 @@ prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
 EOF
 
 #------------------- App data file
-cat > $FASRCSW_DEV/appdata/%{modulename}.dat <<EOF
+cat > $FASRCSW_DEV/appdata/%{modulename}.%{type}.dat <<EOF
 appname             : %{appname}
 appversion          : %{appversion}
 description         : %{appdescription}

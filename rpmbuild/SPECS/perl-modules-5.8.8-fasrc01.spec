@@ -222,6 +222,28 @@ append_path("PERL5LIB",            "/n/sw/odyssey-apps/perl5mods/lib/perl5/site_
 append_path("PERL5LIB",            "/n/sw/odyssey-apps/perl5mods/lib64/perl5/site_perl")
 EOF
 
+#------------------- App data file
+cat > $FASRCSW_DEV/appdata/%{modulename}.%{type}.dat <<EOF
+appname             : %{appname}
+appversion          : %{appversion}
+description         : %{appdescription}
+tags                : %{apptags}
+publication         : %{apppublication}
+modulename          : %{modulename}
+type                : %{type}
+compiler            : %{compiler}
+mpi                 : %{mpi}
+specauthor          : %{specauthor}
+builddate           : %{builddate}
+buildhost           : %{buildhost}
+buildhostversion    : %{buildhostversion}
+builddependencies   : %{builddependencies}
+rundependencies     : %{rundependencies}
+buildcomments       : %{buildcomments}
+requestor           : %{requestor}
+requestref          : %{requestref}
+EOF
+
 
 
 #------------------- %%files (there should be no need to change this ) --------
