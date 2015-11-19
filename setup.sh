@@ -1,7 +1,7 @@
 #--- basic config -- adjust as needed
 
 #the location of production fasrcsw clone
-export FASRCSW_PROD=/n/sw/fasrcsw
+export FASRCSW_PROD=/data/itlab/helmod
 
 #default compilers and mpi stacks
 #update these as versions increase.
