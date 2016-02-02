@@ -1,0 +1,20 @@
+---
+appname             : perl
+appversion          : 5.10.1
+description         : Perl interpreter
+module              : perl-5.10.1-fasrc04
+tags                : aci-ref-app-category:Programming Tools; aci-ref-app-tag:Scripting languages
+publication         : 
+modulename          : perl-5.10.1-fasrc04
+type                : Core
+compiler            : %{compiler}
+mpi                 : %{mpi}
+specauthor          : Darren Boss, Duke Center for Genomics and Computational Biology <gcb-help@duke.edu>
+builddate           : Wed Jul 15 15:52:05 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : hardac-sm.genome.duke.edu
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : 
+requestref          : 

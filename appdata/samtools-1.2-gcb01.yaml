@@ -1,0 +1,18 @@
+---
+appname             : samtools
+appversion          : 1.2
+description         : SAM Tools provide various utilities for manipulating alignments in the SAM format, including sorting, merging, indexing and generating alignments in a per-position format.
+module              : samtools-1.2-gcb01
+tags                : aci-ref-app-category:Applications; aci-ref-app-tag:Sequence analysis & processing
+publication         : 
+modulename          : samtools-1.2-gcb01
+type                : Core
+specauthor          : Darren Boss, Harvard FAS Research Computing <rchelp@fas.harvard.edu>
+builddate           : Mon Apr 13 12:53:00 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : perl/5.10.1-fasrc03
+buildcomments       : 
+requestor           : 
+requestref          : 

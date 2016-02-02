@@ -1,0 +1,19 @@
+appname             : trinityrnaseq
+appversion          : 2.0.6
+description         : De-novo assembler from RNA-Seq from Broad Inst. et al.
+module              : trinityrnaseq-2.0.6-fasrc01
+tags                : aci-ref-app-category:Application; aci-ref-app-tag:Sequence Assembly
+publication         : Grabherr MG, Haas BJ, Yassour M, Levin JZ, Thompson DA, Amit I, Adiconis X, Fan L, Raychowdhury R, Zeng Q, Chen Z, Mauceli E, Hacohen N, Gnirke A, Rhind N, di Palma F, Birren BW, Nusbaum C, Lindblad-Toh K, Friedman N, Regev A. Full-length transcriptome assembly from RNA-seq data without a reference genome. Nat Biotechnol. 2011 May 15;29(7):644-52. doi: 10.1038/nbt.1883. PubMed PMID: 21572440.
+modulename          : trinityrnaseq-2.0.6-fasrc01
+type                : Core
+compiler            : %{compiler}
+mpi                 : %{mpi}
+specauthor          : Darren Boss, Duke Center for Genomics and Computational Biology <gcb-help@duke.edu>
+builddate           : Tue Jul 14 13:36:35 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : bowtie/1.1.1-fasrc01 samtools/1.1-fasrc02 perl-modules/5.10.1-fasrc11
+buildcomments       : 
+requestor           : 
+requestref          : 

@@ -1,0 +1,18 @@
+---
+appname             : zlib
+appversion          : 1.2.8
+description         : zlib version 1.2.8
+module              : zlib-1.2.8-fasrc03
+tags                : aci-ref-app-category:Libraries; aci-ref-app-tag:Compression
+publication         : 
+modulename          : zlib-1.2.8-fasrc03
+type                : Core
+specauthor          : Darren Boss, Duke Center for Genomics and Computational Biology <gcb-help@duke.edu>
+builddate           : Tue Apr 14 14:38:42 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : 
+requestref          : 

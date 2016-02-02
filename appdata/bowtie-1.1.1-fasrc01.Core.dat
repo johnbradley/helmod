@@ -1,0 +1,20 @@
+---
+appname             : bowtie
+appversion          : 1.1.1
+description         : Bowtie is an ultrafast, memory-efficient short read aligner.
+module              : bowtie-1.1.1-fasrc01
+tags                : aci-ref-app-category:Applications; aci-ref-app-tag:Sequence alignment & comparison
+publication         : 
+modulename          : bowtie-1.1.1-fasrc01
+type                : Core
+compiler            : %{compiler}
+mpi                 : %{mpi}
+specauthor          : Darren Boss, Duke Center for Genomics and Computational Biology <gcb-help@duke.edu>
+builddate           : Mon Aug 17 15:07:18 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : 
+requestref          : 

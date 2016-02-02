@@ -1,0 +1,20 @@
+---
+appname             : gd
+appversion          : 2.0.28
+description         : A graphics library for fast image creation
+module              : gd-2.0.28-fasrc01
+tags                : aci-ref-app-category:Library aci-ref-app-tag:Graphics
+publication         : 
+modulename          : gd-2.0.28-fasrc01
+type                : Core
+compiler            : %{compiler}
+mpi                 : %{mpi}
+specauthor          : Darren Boss, Duke Center for Genomics and Computational Biology <gcb-help@duke.edu>
+builddate           : Wed Jul 15 16:14:59 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : 
+requestref          : 

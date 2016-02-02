@@ -1,0 +1,18 @@
+appname             : Anaconda
+appversion          : 1.9.2
+description         : a Python distribution for large-scale data processing, predictive analytics, and scientific computing
+tags                : 
+publication         : 
+modulename          : Anaconda-1.9.2-fasrc01
+type                : Core
+compiler            : system
+mpi                 : 
+specauthor          : Darren Boss, Harvard FAS Research Computing <rchelp@fas.harvard.edu>
+builddate           : Mon Sep 28 00:21:36 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : 
+requestref          : 

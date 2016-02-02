@@ -1,0 +1,18 @@
+appname             : git
+appversion          : 2.1.0
+description         : a free and open source distributed version control system
+tags                : 
+publication         : 
+modulename          : git-2.1.0-fasrc01
+type                : Core
+compiler            : system
+mpi                 : 
+specauthor          : Darren Boss, Harvard FAS Research Computing <rchelp@fas.harvard.edu>
+builddate           : Wed Oct  7 14:08:13 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : 
+requestref          : 

@@ -1,0 +1,19 @@
+appname             : gsl
+appversion          : 1.16
+description         : GNU Scientific Library is numerical library for C and C++ programmers.
+module              : gsl-1.16-fasrc03
+tags                : aci-ref-app-category:Libraries; aci-ref-app-tag:Math
+publication         : 
+modulename          : gsl-1.16-fasrc03
+type                : Core
+compiler            : %{compiler}
+mpi                 : %{mpi}
+specauthor          : Darren Boss, Harvard FAS Research Computing <rchelp@fas.harvard.edu>
+builddate           : Tue Nov 17 18:32:47 EST 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : 
+requestref          : 

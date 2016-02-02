@@ -1,0 +1,18 @@
+appname             : matlab
+appversion          : R2015a
+description         : a high-level language and interactive environment for numerical computation, visualization, and programming
+tags                : 
+publication         : 
+modulename          : matlab-R2015a-gcb01
+type                : Core
+compiler            : system
+mpi                 : 
+specauthor          : Darren Boss, Harvard FAS Research Computing <rchelp@fas.harvard.edu>
+builddate           : Sun Dec  6 21:47:52 EST 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : 
+requestref          : 

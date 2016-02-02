@@ -1,0 +1,18 @@
+appname             : emboss
+appversion          : 6.6.0
+description         : EMBOSS is a free Open Source software analysis package specially developed for the needs of the molecular biology (e.g. EMBnet) user community
+tags                : 
+publication         : 
+modulename          : emboss-6.6.0-fasrc01
+type                : Core
+compiler            : system
+mpi                 : 
+specauthor          : Darren Boss, Harvard FAS Research Computing <rchelp@fas.harvard.edu>
+builddate           : Sun Oct 11 10:42:21 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : 
+requestref          : 

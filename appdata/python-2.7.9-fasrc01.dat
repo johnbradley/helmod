@@ -1,0 +1,19 @@
+appname             : python
+appversion          : 2.7.9
+description         : Python version 2.7.9
+module              : python-2.7.9-fasrc01
+tags                : aci-ref-app-category:Programming Tools; aci-ref-app-tag:Interpreter
+publication         : 
+modulename          : python-2.7.9-fasrc01
+type                : Core
+compiler            : %{compiler}
+mpi                 : %{mpi}
+specauthor          : Darren Boss, Harvard FAS Research Computing <rchelp@fas.harvard.edu>
+builddate           : Sun Sep 27 23:52:49 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : This python is being built as a Comp module so that it is available for Intel-specific code.
+requestor           : 
+requestref          : 

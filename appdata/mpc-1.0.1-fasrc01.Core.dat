@@ -1,0 +1,20 @@
+---
+appname             : mpc
+appversion          : 1.0.1
+description         : a C library for the arithmetic of complex numbers with arbitrarily high precision and correct rounding of the result
+module              : mpc-1.0.1-fasrc01
+tags                : aci-ref-app-category:Libraries;  aci-ref-app-tag:Math
+publication         : 
+modulename          : mpc-1.0.1-fasrc01
+type                : Core
+compiler            : %{compiler}
+mpi                 : %{mpi}
+specauthor          : Darren Boss, Duke Center for Genomics and Computational Biology <gcb-help@duke.edu>
+builddate           : Fri Aug 14 16:36:58 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : gmp/6.0.0-fasrc01 mpfr/3.1.2-fasrc02
+rundependencies     : gmp/6.0.0-fasrc01 mpfr/3.1.2-fasrc02
+buildcomments       : 
+requestor           : 
+requestref          : 

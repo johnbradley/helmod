@@ -1,0 +1,18 @@
+---
+appname             : jellyfish
+appversion          : 1.1.11
+description         : JELLYFISH is a tool for fast, memory-efficient counting of k-mers in DNA.
+module              : jellyfish-1.1.11-fasrc01
+tags                : aci-ref-app-category:Applications; aci-ref-app-tag:Sequence analysis
+publication         : Guillaume Marcais and Carl Kingsford, A fast, lock-free approach for efficient parallel counting of occurrences of k-mers. Bioinformatics (2011) 27(6): 764-770 doi:10.1093/bioinformatics/btr011
+modulename          : jellyfish-1.1.11-fasrc01
+type                : Core
+specauthor          : Darren Boss, Duke Center for Genomics and Computational Biology <gcb-help@duke.edu>
+builddate           : Mon Apr 13 14:54:13 EDT 2015
+buildhost           : hardac-sm.genome.duke.edu
+buildhostversion    : 1
+builddependencies   : 
+rundependencies     : 
+buildcomments       : 
+requestor           : Shoukai Yu <shoukaiyu@hsph.harvard.edu>
+requestref          : RCRT:80568
