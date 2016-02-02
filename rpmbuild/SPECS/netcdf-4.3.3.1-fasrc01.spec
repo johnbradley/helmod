@@ -37,7 +37,7 @@ Summary: %{summary_static}
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.2.tar.gz
+URL: ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
 Source: %{name}-%{version}.tar.gz
 
 #

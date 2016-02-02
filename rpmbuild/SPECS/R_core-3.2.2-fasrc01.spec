@@ -73,8 +73,8 @@ Prefix: %{_prefix}
 %define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
 
-%define builddependencies jdk/1.8.0_45-fasrc01 
-%define rundependencies %{builddependencies}
+%define builddependencies jdk/1.8.0_45-fasrc01 curl/7.45.0-fasrc01 
+%define rundependencies curl/7.45.0-fasrc01 
 %define buildcomments %{nil}
 %define requestor Yoh Isogai <yohisogai@gmail.com>
 %define requestref RCRT:92114
@@ -272,11 +272,14 @@ whatis("Version: %{version}-%{release_short}")
 whatis("Description: %{summary_static}")
 
 ---- prerequisite apps (uncomment and tweak if necessary)
---if mode()=="load" then
---	if not isloaded("NAME") then
---		load("NAME/VERSION-RELEASE")
---	end
---end
+for i in string.gmatch("%{rundependencies}","%%S+") do 
+    if mode()=="load" then
+        a = string.match(i,"^[^/]+")
+        if not isloaded(a) then
+            load(i)
+        end
+    end
+end
 
 -- environment changes (uncomment what is relevant)
 prepend_path("PATH",               "%{_prefix}/lib64/R/bin")

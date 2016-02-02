@@ -6,7 +6,6 @@ trial:
 	fasrcsw-rpmbuild-$$TYPE --define 'trial yes' -ba "$$NAME-$$VERSION-$$RELEASE".spec
 
 build:
-	@echo "FASRCSW_DEV is $$FASRCSW_DEV"
 	fasrcsw-rpmbuild-$$TYPE -ba "$$NAME-$$VERSION-$$RELEASE".spec
 
 filelist:
@@ -25,10 +24,12 @@ install:
 query:
 	fasrcsw-rpm -qa | grep "^$$NAME-$$VERSION-$$RELEASE" || true
 
-post:
+sync:
 	sudo rsync -avu {"$$FASRCSW_DEV","$$FASRCSW_PROD"}/rpmbuild/SOURCES/
 	sudo rsync -avu {"$$FASRCSW_DEV","$$FASRCSW_PROD"}/rpmbuild/RPMS/
 	sudo rsync -avu {"$$FASRCSW_DEV","$$FASRCSW_PROD"}/rpmbuild/SRPMS/
+
+post: sync
 	cd "$$FASRCSW_DEV"
 	git add --all .
 	git commit -v .

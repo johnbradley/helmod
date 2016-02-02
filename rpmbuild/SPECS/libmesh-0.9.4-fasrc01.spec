@@ -141,11 +141,7 @@ umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
 
-<<<<<<< HEAD
 ./configure --prefix=%{_prefix} CC=mpicc CXX=mpicxx FC=mpif90 F77=mpif77 --with-mpi=${MPI_HOME} \
-=======
-./configure --prefix=%{_prefix} CC=mpicc CXX=mpicxx FC=mpif90 F77=mpif77 --with-mpi=$MPI_HOME \
->>>>>>> 9502061a0c3477c6fed96278e701289530da0861
 	--program-prefix= \
 	--exec-prefix=%{_prefix} \
 	--bindir=%{_prefix}/bin \

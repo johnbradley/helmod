@@ -78,7 +78,7 @@ RStudio is an integrated development environment (IDE) for R.
 %define buildhostversion 1
 
 
-%define builddependencies R/3.2.2-fasrc01 cmake/2.8.12.2-fasrc01 boost/1.59.0-fasrc01 qt/5.5.1-fasrc01
+%define builddependencies R/3.2.2-fasrc01 cmake/2.8.12.2-fasrc01 boost/1.59.0-fasrc01 qt/5.5.1-fasrc01 qt-creator/3.5.1-fasrc01
 %define rundependencies R/3.2.2-fasrc01 
 %define buildcomments Built against R/3.2.2
 %define requestor Yoh Isogai <yohisogai@gmail.com>
