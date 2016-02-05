@@ -1,7 +1,7 @@
 #--- basic config -- adjust as needed
 
 #the location of production fasrcsw clone
-export FASRCSW_PROD=/data/itlab/helmod
+export FASRCSW_PROD=/nfs/software/helmod
 
 #default compilers and mpi stacks
 #update these as versions increase.
@@ -12,7 +12,7 @@ export FASRCSW_MPIS="openmpi/1.8.3-fasrc02 mvapich2/2.0-fasrc03"
 #export FASRCSW_MPIS="openmpi/1.8.3-fasrc02"
 
 #the build host
-export FASRCSW_BUILD_HOST=builds
+export FASRCSW_BUILD_HOST=rpmbuild-centos6
 test "$(hostname -s)" != "$FASRCSW_BUILD_HOST" && echo "WARNING: the current host is not the canonical build host, $FASRCSW_BUILD_HOST" >&2
 
 #rpm packager credits
