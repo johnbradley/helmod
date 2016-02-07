@@ -141,7 +141,7 @@ cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}_1_55_0
 %define toolset_name %( test "%{comp_name}" == "intel" && echo "intel-linux" || echo "gcc")
 %define c_version %( test "$TYPE" == "Core" && echo "4.4.7" || echo "%{comp_version}" )
 
-./bootstrap.sh --prefix=%{_prefix} --with-python-root=/n/sw/fasrcsw/apps/Core/Anaconda/1.9.2-fasrc01/x \
+./bootstrap.sh --prefix=%{_prefix} --with-python-root=/nfs/software/helmod/apps/Core/Anaconda/1.9.2-fasrc01/x \
 --with-toolset=%{toolset_name}
 
 test "%{comp_name}" == "intel" && sed -i 's/^if ! intel-linux.*/if ! ( intel in [ feature.values <toolset> ] \&\& linux in [ feature.values <toolset-intel:platform> ] )/'  project-config.jam
