@@ -30,19 +30,16 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static Automatically Tuned Linear Algebra Software
+%define summary_static RAxML (Randomized Axelerated Maximum Likelihood) is a program for sequential and parallel Maximum Likelihood based inference of large phylogenetic trees.
+
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-#wget http://downloads.sourceforge.net/project/math-atlas/Stable/3.10.2/atlas3.10.2.tar.bz2
-#wget http://www.netlib.org/lapack/lapack-3.5.0.tgz
-URL: http://math-atlas.sourceforge.net/
-Source0: %{name}%{version}.tar.bz2
-Source1: lapack-3.5.0.tgz
-%define lapack_version 3.5.0
+#URL: http://...FIXME...
+Source: %{name}-%{version}.tar.gz
 
 #
 # there should be no need to change the following
@@ -64,7 +61,7 @@ Prefix: %{_prefix}
 # rpm will format it, so no need to worry about the wrapping
 #
 %description
-The ATLAS (Automatically Tuned Linear Algebra Software) project is an ongoing research effort focusing on applying empirical techniques in order to provide portable performance. At present, it provides C and Fortran77 interfaces to a portably efficient BLAS implementation, as well as a few routines from LAPACK.
+RAxML (Randomized A(x)ccelerated Maximum Likelihood) is a program for sequential and parallel Maximum-Likelihood-based inference of large phylogenetic trees. It can also be used for postanalyses of sets of phylogenetic trees, analyses of alignments and, evolutionary placement of short reads.  It has originally been derived from fastDNAml which in turn was derived from Joe Felsentein’s dnaml which is part of the PHYLIP package. 
 
 #
 # Macros for setting app data 
@@ -87,15 +84,15 @@ The ATLAS (Automatically Tuned Linear Algebra Software) project is an ongoing re
 
 %define builddependencies %{nil}
 %define rundependencies %{builddependencies}
-%define buildcomments %{nil}
+%define buildcomments Building with SSE3 instructions.  Some, but not all compute nodes have AVX. Spec file can be used properly as either Comp or MPI. When building as Comp, the CC line is removed from the Makefile so that the environment value is picked up.
 %define requestor %{nil}
 %define requestref %{nil}
 
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
 # aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
-%define apptags %{nil} 
-%define apppublication %{nil}
+%define apptags  aci-ref-app-category:Applications aci-ref-app-tag:Phylogenetic analysis
+%define apppublication PMID: A. Stamatakis: "RAxML Version 8: A tool for Phylogenetic Analysis and Post-Analysis of Large Phylogenies". In Bioinformatics, 2014
 
 
 
@@ -105,16 +102,16 @@ The ATLAS (Automatically Tuned Linear Algebra Software) project is an ongoing re
 
 
 #
+# FIXME
+#
 # unpack the sources here.  The default below is for standard, GNU-toolchain 
 # style things -- hopefully it'll just work as-is.
 #
 
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD 
-rm -fr ATLAS
-rm -rf %{name}-%{version}
-tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}%{version}.tar.*
-mv ATLAS %{name}-%{version}
+rm -rf standard-RAxML-%{version}
+tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-%{version}.tar.*
 cd %{name}-%{version}
 chmod -Rf a+rX,u+w,g-w,o-w .
 
@@ -128,23 +125,29 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 %include fasrcsw_module_loads.rpmmacros
 
 
+#
+# FIXME
+#
+# configure and make the software here.  The default below is for standard 
+# GNU-toolchain style things -- hopefully it'll just work as-is.
+# 
 
+##prerequisite apps (uncomment and tweak if necessary).  If you add any here, 
+##make sure to add them to modulefile.lua below, too!
+#module load NAME/VERSION-RELEASE
 
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
-mkdir build
-cd $_
+export MAKEFILES="Makefile.MPI.gcc Makefile.SSE3.MPI.gcc Makefile.SSE3.HYBRID.gcc"
+test $TYPE == "Comp" && MAKEFILES="Makefile.gcc Makefile.SSE3.PTHREADS.gcc Makefile.SSE3.gcc"
 
-../configure --prefix=%{_prefix} --shared \
-	--with-netlib-lapack-tarfile="$FASRCSW_DEV"/rpmbuild/SOURCES/lapack-%{lapack_version}.tgz \
-	-b 64  -t -1  -Fa alg -fPIC  -D c -DPentiumCPS=2000
-
-
-#%%{?_smp_mflags} causes this to fail
-make
-
-
+for makefile in $MAKEFILES
+do
+    test $TYPE == "Comp" && sed -i -e 's/^CC .*//' $makefile
+    make -f $makefile
+    rm *.o
+done
 
 #------------------- %%install (~ make install + create modulefile) -----------
 
@@ -173,10 +176,12 @@ make
 
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
-cd build
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
-mkdir -p %{buildroot}/%{_prefix}
-make install DESTDIR=%{buildroot}/%{_prefix}
+mkdir -p %{buildroot}/%{_prefix}/bin
+cp raxml* %{buildroot}/%{_prefix}/bin
+cd %{buildroot}/%{_prefix}/bin
+test $TYPE == "Comp" && ln -s raxmlHPC-SSE3 raxml || ln -s raxmlHPC-MPI-SSE3 raxml
+
 
 
 #(this should not need to be changed)
@@ -257,7 +262,8 @@ whatis("Description: %{summary_static}")
 ---- prerequisite apps (uncomment and tweak if necessary)
 for i in string.gmatch("%{rundependencies}","%%S+") do 
     if mode()=="load" then
-        if not isloaded(i) then
+        a = string.match(i,"^[^/]+")
+        if not isloaded(a) then
             load(i)
         end
     end
@@ -265,13 +271,8 @@ end
 
 
 ---- environment changes (uncomment what is relevant)
-setenv("ATLAS_HOME",                "%{_prefix}")
-setenv("ATLAS_LIB",                 "%{_prefix}/lib")
-setenv("ATLAS_INCLUDE",             "%{_prefix}/include")
-prepend_path("CPATH",               "%{_prefix}/include")
-prepend_path("FPATH",               "%{_prefix}/include")
-prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib")
-prepend_path("LIBRARY_PATH",        "%{_prefix}/lib")
+setenv("RAXML_HOME",                "%{_prefix}")
+prepend_path("PATH",                "%{_prefix}/bin")
 EOF
 
 #------------------- App data file

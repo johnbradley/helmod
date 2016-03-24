@@ -140,10 +140,13 @@ umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
 
-./configure --prefix=%{_prefix} \
-            --enable-python \
-            --enable-x11 \
-            --enable-qt
+./configure linuxx8664gcc --prefix=%{_prefix}                           \
+                          --all                                         \
+                          --with-cc=x86_64-unknown-linux-gnu-gcc-5.2.0  \
+                          --with-cxx=x86_64-unknown-linux-gnu-g++       \
+                          --with-ld=x86_64-unknown-linux-gnu-g++        \
+                          --with-f77=x86_64-unknown-linux-gnu-gfortran  \
+                          --with-gcc-toolchain=/n/sw/fasrcsw/apps/Core/gcc/5.2.0-fasrc02/lib64/gcc/x86_64-unknown-linux-gnu/5.2.0
 
 #	--program-prefix= \
 #	--exec-prefix=%{_prefix} \

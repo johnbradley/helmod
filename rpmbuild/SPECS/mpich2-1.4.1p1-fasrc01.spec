@@ -140,7 +140,11 @@ umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
 
-./configure --prefix=%{_prefix} --enable-shared --enable-f77 --enable-fc --enable-cxx --enable-lib-depend
+./configure --prefix=%{_prefix} \
+            --enable-shared --enable-f77 --enable-fc --enable-cxx \
+            --with-device=ch3:nemesis \
+            --enable-lib-depend
+            
 #	--program-prefix= \
 #	--exec-prefix=%{_prefix} \
 #	--bindir=%{_prefix}/bin \
