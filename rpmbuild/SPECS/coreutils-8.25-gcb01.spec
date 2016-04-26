@@ -1,5 +1,5 @@
 #------------------- package info ----------------------------------------------
-
+#
 #
 # enter the simple app name, e.g. myapp
 #
@@ -30,15 +30,15 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static QIIME version 1.9.0
+%define summary_static A set of basic GNU tools commonly used in shell scripts
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-#URL: http://...FIXME...
-#Source: %{name}-%{version}.tar.gz
+URL: http://ftp.gnu.org/gnu/coreutils/coreutils-8.25.tar.xzh
+Source: %{name}-%{version}.tar.xz
 
 #
 # there should be no need to change the following
@@ -53,6 +53,7 @@ License: see COPYING file or upstream packaging
 
 Release: %{release_full}
 Prefix: %{_prefix}
+
 
 #
 # Macros for setting app data 
@@ -72,9 +73,9 @@ Prefix: %{_prefix}
 %define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
 
-%define builddependencies qiime-dependencies/1.9-fasrc01 qpy/2.7.10-fasrc01 qiime-packages/1.9.1-fasrc01
+%define builddependencies %{nil}
 %define rundependencies %{builddependencies}
-%define buildcomments Built using a pip freeze from the pip qiime install
+%define buildcomments %{nil}
 %define requestor %{nil}
 %define requestref %{nil}
 
@@ -84,14 +85,15 @@ Prefix: %{_prefix}
 %define apptags %{nil} 
 %define apppublication %{nil}
 
-# These must be done in separate build and install steps to avoid *.so issues 
-%define PACKAGES h5py-2.5.0 scipy-0.16.0 cogent-1.5.3 matplotlib-1.4.3 biom-format-2.1.4  pandas-0.16.2 scikit-bio-0.2.3 
+
+
 #
 # enter a description, often a paragraph; unless you prefix lines with spaces, 
 # rpm will format it, so no need to worry about the wrapping
 #
+# NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
+#
 %description
-QIIME: Quantitative Insights Into Microbial Ecology.
 
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
@@ -100,13 +102,19 @@ QIIME: Quantitative Insights Into Microbial Ecology.
 
 
 #
+# FIXME
+#
 # unpack the sources here.  The default below is for standard, GNU-toolchain 
 # style things -- hopefully it'll just work as-is.
 #
+
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD 
 rm -rf %{name}-%{version}
-mkdir %{name}-%{version}
+tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-%{version}.tar.*
+cd %{name}-%{version}
+chmod -Rf a+rX,u+w,g-w,o-w .
+
 
 
 #------------------- %%build (~ configure && make) ----------------------------
@@ -118,9 +126,38 @@ mkdir %{name}-%{version}
 
 
 #
+# FIXME
+#
 # configure and make the software here.  The default below is for standard 
 # GNU-toolchain style things -- hopefully it'll just work as-is.
 # 
+
+##prerequisite apps (uncomment and tweak if necessary).  If you add any here, 
+##make sure to add them to modulefile.lua below, too!
+#module load NAME/VERSION-RELEASE
+
+umask 022
+cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
+
+
+./configure --prefix=%{_prefix} \
+	--program-prefix= \
+	--exec-prefix=%{_prefix} \
+	--bindir=%{_prefix}/bin \
+	--sbindir=%{_prefix}/sbin \
+	--sysconfdir=%{_prefix}/etc \
+	--datadir=%{_prefix}/share \
+	--includedir=%{_prefix}/include \
+	--libdir=%{_prefix}/lib64 \
+	--libexecdir=%{_prefix}/libexec \
+	--localstatedir=%{_prefix}/var \
+	--sharedstatedir=%{_prefix}/var/lib \
+	--mandir=%{_prefix}/share/man \
+	--infodir=%{_prefix}/share/info
+
+#if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
+#percent sign) to build in parallel
+make
 
 
 
@@ -130,25 +167,30 @@ mkdir %{name}-%{version}
 
 #(leave this here)
 %include fasrcsw_module_loads.rpmmacros
+
+
+#
+# FIXME
+#
+# make install here.  The default below is for standard GNU-toolchain style 
+# things -- hopefully it'll just work as-is.
+#
+# Note that DESTDIR != %{prefix} -- this is not the final installation.  
+# Rpmbuild does a temporary installation in the %{buildroot} and then 
+# constructs an rpm out of those files.  See the following hack if your app 
+# does not support this:
+#
+# https://github.com/fasrc/fasrcsw/blob/master/doc/FAQ.md#how-do-i-handle-apps-that-insist-on-writing-directly-to-the-production-location
+#
+# %%{buildroot} is usually ~/rpmbuild/BUILDROOT/%{name}-%{version}-%{release}.%{arch}.
+# (A spec file cannot change it, thus it is not inside $FASRCSW_DEV.)
+#
+
+umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
-
-export PYTHONPATH="%{buildroot}%{_prefix}/lib/python2.7/site-packages":$PYTHONPATH
-export HDF5_DIR=$HDF5_HOME
-
-
-for p in %{PACKAGES}; do
-    f="$FASRCSW_DEV/rpmbuild/SOURCES/${p}.tar.gz"
-    tar xvf ${f}
-    cd ${p}
-    python setup.py build
-    python setup.py install --skip-build --prefix=%{_prefix} --root=%{buildroot}
-done
-git clone https://github.com/biocore/qiime.git
-cd qiime
-git checkout 3c23a0063ea61b8d99400fd8ef534fecbf4b7c27
-python setup.py install --prefix=%{_prefix} --root=%{buildroot}
+make install DESTDIR=%{buildroot}
 
 
 #(this should not need to be changed)
@@ -219,6 +261,7 @@ cat > %{buildroot}/%{_prefix}/modulefile.lua <<EOF
 local helpstr = [[
 %{name}-%{version}-%{release_short}
 %{summary_static}
+%{buildcomments}
 ]]
 help(helpstr,"\n")
 
@@ -229,18 +272,31 @@ whatis("Description: %{summary_static}")
 ---- prerequisite apps (uncomment and tweak if necessary)
 for i in string.gmatch("%{rundependencies}","%%S+") do 
     if mode()=="load" then
-        if not isloaded(i) then
+        a = string.match(i,"^[^/]+")
+        if not isloaded(a) then
             load(i)
         end
     end
 end
 
 
--- environment changes (uncomment what is relevant)
-prepend_path("PATH",                              "%{_prefix}/bin")
-prepend_path("PYTHONPATH",                        "%{_prefix}/lib/python2.7/site-packages")
-setenv("OMPI_MCA_btl_base_warn_component_unused", "0")
-setenv("RDP_JAR_PATH",                            "/nfs/software/rdp_classifier_2.2/rdp_classifier-2.2.jar")
+---- environment changes (uncomment what is relevant)
+--setenv("TEMPLATE_HOME",       "%{_prefix}")
+
+--prepend_path("PATH",                "%{_prefix}/bin")
+--prepend_path("CPATH",               "%{_prefix}/include")
+--prepend_path("FPATH",               "%{_prefix}/include")
+--prepend_path("INFOPATH",            "%{_prefix}/info")
+--prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib")
+--prepend_path("LIBRARY_PATH",        "%{_prefix}/lib")
+--prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib64")
+--prepend_path("LIBRARY_PATH",        "%{_prefix}/lib64")
+--prepend_path("MANPATH",             "%{_prefix}/man")
+--prepend_path("PKG_CONFIG_PATH",     "%{_prefix}/pkgconfig")
+--prepend_path("PATH",                "%{_prefix}/sbin")
+--prepend_path("INFOPATH",            "%{_prefix}/share/info")
+--prepend_path("MANPATH",             "%{_prefix}/share/man")
+--prepend_path("PYTHONPATH",          "%{_prefix}/site-packages")
 EOF
 
 #------------------- App data file
