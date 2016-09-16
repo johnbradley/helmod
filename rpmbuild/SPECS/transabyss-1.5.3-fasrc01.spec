@@ -74,7 +74,7 @@ Prefix: %{_prefix}
 %define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
 
-%define builddependencies Anaconda/1.9.2-fasrc01 bowtie/1.1.1-fasrc01 samtools/1.2-fasrc01 gmap-gsnap/2015.07.23-fasrc01 abyss/1.9.0-fasrc01
+%define builddependencies Anaconda/2.5.0-fasrc01 bowtie/1.1.1-fasrc01 samtools/1.2-fasrc01 gmap-gsnap/2015.07.23-fasrc01 abyss/1.5.2-fasrc01
 %define rundependencies %{builddependencies}
 %define buildcomments %{nil}
 %define requestor %{nil}
@@ -281,6 +281,7 @@ for i in string.gmatch("%{rundependencies}","%%S+") do
 end
 
 ---- environment changes (uncomment what is relevant)
+setenv("TRANSABYSS_HOME",          "%{_prefix}")
 prepend_path("PATH",               "%{_prefix}")
 prepend_path("PATH",               "%{_prefix}/sw/blat/bin")
 prepend_path("PATH",               "%{_prefix}/sw/python-igraph-0.7.1/bin")

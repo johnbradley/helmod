@@ -38,8 +38,9 @@ Summary: %{summary_static}
 # applicable
 #
 #URL: http://...FIXME...
-Source: %{name}-%{version}.tar.gz
-
+Source0: %{name}-%{version}.tar.gz
+Source1: File-HomeDir-1.00.tar.gz
+Source2: File-Which-1.21.tar.gz
 #
 # there should be no need to change the following
 #
@@ -140,25 +141,6 @@ umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
 
-#./configure --prefix=%{_prefix} \
-#	--program-prefix= \
-#	--exec-prefix=%{_prefix} \
-#	--bindir=%{_prefix}/bin \
-#	--sbindir=%{_prefix}/sbin \
-#	--sysconfdir=%{_prefix}/etc \
-#	--datadir=%{_prefix}/share \
-#	--includedir=%{_prefix}/include \
-#	--libdir=%{_prefix}/lib64 \
-#	--libexecdir=%{_prefix}/libexec \
-#	--localstatedir=%{_prefix}/var \
-#	--sharedstatedir=%{_prefix}/var/lib \
-#	--mandir=%{_prefix}/share/man \
-#	--infodir=%{_prefix}/share/info
-
-#if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
-#percent sign) to build in parallel
-#make
-
 
 
 #------------------- %%install (~ make install + create modulefile) -----------
@@ -193,7 +175,21 @@ mkdir -p %{buildroot}/%{_prefix}
 #make install DESTDIR=%{buildroot}
 rsync -av --progress "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}/ %{buildroot}/%{_prefix}/
 
-#(this should not need to be changed)
+# Do the file-homedir thing
+tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/File-HomeDir-1.00.tar.*
+cd File-HomeDir-1.00
+perl Makefile.PL PREFIX=%{_prefix}
+make
+make install DESTDIR=%{buildroot}
+
+tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/File-Which-1.21.tar.*
+cd File-Which-1.21
+perl Makefile.PL PREFIX=%{_prefix}
+make
+make install DESTDIR=%{buildroot}
+
+
+#lthis should not need to be changed)
 #these files are nice to have; %%doc is not as prefix-friendly as I would like
 #if there are other files not installed by make install, add them here
 for f in COPYING AUTHORS README INSTALL ChangeLog NEWS THANKS TODO BUGS; do
@@ -281,6 +277,8 @@ end
 
 ---- environment changes (uncomment what is relevant)
 prepend_path("PATH",               "%{_prefix}/bin")
+prepend_path("PERL5LIB",           "%{_prefix}/lib")
+prepend_path("PERL5LIB",           "%{_prefix}/lib/site_perl/5.10.1")
 prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib")
 prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
 EOF

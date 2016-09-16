@@ -30,16 +30,15 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static a free software environment for statistical computing and graphics
+%define summary_static Fastest Fourier Transform in the West
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: http://www.r-project.org/
-#http://cran.at.r-project.org/src/base/R-3/R-3.1.0.tar.gz
-Source: R-%{version}.tar.gz
+URL: http://www.fftw.org/fftw-3.3.4.tar.gz
+Source: %{name}-%{version}.tar.gz
 
 #
 # there should be no need to change the following
@@ -61,8 +60,7 @@ Prefix: %{_prefix}
 # rpm will format it, so no need to worry about the wrapping
 #
 %description
-R is a language and environment for statistical computing and graphics. It is a GNU project which is similar to the S language and environment which was developed at Bell Laboratories (formerly AT&T, now Lucent Technologies) by John Chambers and colleagues. R can be considered as a different implementation of S. There are some important differences, but much code written for S runs unaltered under R.
-R provides a wide variety of statistical (linear and nonlinear modelling, classical statistical tests, time-series analysis, classification, clustering, ...) and graphical techniques, and is highly extensible.
+FFTW is a C subroutine library for computing the discrete Fourier transform (DFT) in one or more dimensions, of arbitrary input size, and of both real and complex data (as well as of even/odd data, i.e. the discrete cosine/sine transforms or DCT/DST).
 
 
 
@@ -72,6 +70,7 @@ R provides a wide variety of statistical (linear and nonlinear modelling, classi
 
 
 #
+# FIXME
 #
 # unpack the sources here.  The default below is for standard, GNU-toolchain 
 # style things -- hopefully it'll just work as-is.
@@ -79,9 +78,9 @@ R provides a wide variety of statistical (linear and nonlinear modelling, classi
 
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD 
-rm -rf R-%{version}
-tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/R-%{version}.tar.*
-cd R-%{version}
+rm -rf %{name}-%{version}
+tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-%{version}.tar.*
+cd %{name}-%{version}
 chmod -Rf a+rX,u+w,g-w,o-w .
 
 
@@ -95,6 +94,7 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 
 
 #
+# FIXME
 #
 # configure and make the software here.  The default below is for standard 
 # GNU-toolchain style things -- hopefully it'll just work as-is.
@@ -105,34 +105,16 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 #module load NAME/VERSION-RELEASE
 
 umask 022
-cd "$FASRCSW_DEV"/rpmbuild/BUILD/R-%{version}
+cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
-#w/ mkl, dynamic:
-#	--with-blas="-L$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread" --with-lapack="-L$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread"
-#w/ mkl, static :
-#	--with-blas="$MKLPATH/libmkl_solver_lp64_sequential.a -Wl,--start-group $MKLPATH/libmkl_intel_lp64.a $MKLPATH/libmkl_sequential.a $MKLPATH/libmkl_core.a -Wl,--end-group -lpthread" --with-lapack="$MKLPATH/libmkl_solver_lp64_sequential.a -Wl,--start-group  $MKLPATH/libmkl_intel_lp64.a $MKLPATH/libmkl_sequential.a $MKLPATH/libmkl_core.a -Wl,--end-group -lpthread"
-#w/ custom tcltk:
-#	--with-tcltk=/n/sw/centos6/tcl8.5.14 --with-tcl-config=/n/sw/centos6/tcl8.5.14/lib/tclConfig.sh --with-tk-config=/n/sw/centos6/tk8.5.14/lib/tkConfig.sh
+./configure --prefix=%{_prefix} \
+    --enable-openmp \
+    --enable-threads \
+    --enable-shared
 
-./configure CC=gcc F77=gfortran CXX=g++ --enable-R-shlib --with-tcltk \
-	--prefix=%{_prefix} \
-	--program-prefix= \
-	--exec-prefix=%{_prefix} \
-	--bindir=%{_prefix}/bin \
-	--sbindir=%{_prefix}/sbin \
-	--sysconfdir=%{_prefix}/etc \
-	--datadir=%{_prefix}/share \
-	--includedir=%{_prefix}/include \
-	--libdir=%{_prefix}/lib64 \
-	--libexecdir=%{_prefix}/libexec \
-	--localstatedir=%{_prefix}/var \
-	--sharedstatedir=%{_prefix}/var/lib \
-	--mandir=%{_prefix}/share/man \
-	--infodir=%{_prefix}/share/info
-
-#if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
-#percent sign) to build in parallel
-make %{?_smp_mflags}
+export CFLAGS="-fPIC"
+export LDFLAGS="-fPIC"
+make -j8
 
 
 
@@ -145,6 +127,7 @@ make %{?_smp_mflags}
 
 
 #
+# FIXME
 #
 # make install here.  The default below is for standard GNU-toolchain style 
 # things -- hopefully it'll just work as-is.
@@ -161,12 +144,10 @@ make %{?_smp_mflags}
 #
 
 umask 022
-cd "$FASRCSW_DEV"/rpmbuild/BUILD/R-%{version}
+cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
 make install DESTDIR=%{buildroot}
-export R_HOME=%{buildroot}/%{_prefix}
-%{buildroot}/%{_prefix}/bin/R CMD javareconf
 
 
 #(this should not need to be changed)
@@ -213,6 +194,7 @@ done
 %endif
 
 # 
+# FIXME (but the above is enough for a "trial" build)
 #
 # This is the part that builds the modulefile.  However, stop now and run 
 # `make trial'.  The output from that will suggest what to add below.
@@ -250,19 +232,18 @@ whatis("Description: %{summary_static}")
 --	end
 --end
 
--- environment changes (uncomment what's relevant)
-prepend_path("PATH",               "%{_prefix}/lib64/R/bin")
+---- environment changes (uncomment what's relevant)
+setenv("FFTW_HOME",                "%{_prefix}")
+setenv("FFTW_INCLUDE",             "%{_prefix}/include")
+setenv("FFTW_LIB",                 "%{_prefix}/lib")
 prepend_path("PATH",               "%{_prefix}/bin")
-prepend_path("CPATH",              "%{_prefix}/lib64/R/library/Matrix/include")
-prepend_path("CPATH",              "%{_prefix}/lib64/R/include")
-prepend_path("FPATH",              "%{_prefix}/lib64/R/library/Matrix/include")
-prepend_path("FPATH",              "%{_prefix}/lib64/R/include")
-prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib64/R/lib")
-prepend_path("LIBRARY_PATH",       "%{_prefix}/lib64/R/lib")
-prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib64")
-prepend_path("LIBRARY_PATH",       "%{_prefix}/lib64")
+prepend_path("CPATH",              "%{_prefix}/include")
+prepend_path("FPATH",              "%{_prefix}/include")
+prepend_path("INFOPATH",           "%{_prefix}/share/info")
+prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib")
+prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
 prepend_path("MANPATH",            "%{_prefix}/share/man")
-prepend_path("PKG_CONFIG_PATH",    "%{_prefix}/lib64/pkgconfig")
+prepend_path("PKG_CONFIG_PATH",    "%{_prefix}/lib/pkgconfig")
 EOF
 
 
