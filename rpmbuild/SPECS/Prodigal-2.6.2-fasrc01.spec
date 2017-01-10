@@ -30,14 +30,14 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static NetCDF version 4.1.3
+%define summary_static Fast, reliable protein-coding gene prediction for prokaryotic genomes.
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.1.3.tar.gz
+URL: https://github.com/hyattpd/Prodigal/archive/v2.6.2.tar.gz
 Source: %{name}-%{version}.tar.gz
 
 #
@@ -73,17 +73,16 @@ Prefix: %{_prefix}
 %define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
 
-
-%define builddependencies hdf5/1.8.12-fasrc12 zlib/1.2.8-fasrc07
+%define builddependencies %{nil}
 %define rundependencies %{builddependencies}
 %define buildcomments %{nil}
-%define requestor %{nil}
-%define requestref %{nil}
+%define requestor Fauzi Haroon <fauziharoon@fas.harvard.edu>
+%define requestref RCRT:105908
 
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
 # aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
-%define apptags aci-ref-app-category:Libraries; aci-ref-app-tag:I/O
+%define apptags %{nil} 
 %define apppublication %{nil}
 
 
@@ -95,7 +94,13 @@ Prefix: %{_prefix}
 # NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
 #
 %description
-NetCDF (network Common Data Form) is a set of software libraries and machine-independent data formats that support the creation, access, and sharing of array-oriented scientific data. Distributions are provided for Java and C/C++/Fortran.
+Fast, reliable protein-coding gene prediction for prokaryotic genomes.
+- Predicts protein-coding genes: Prodigal provides fast, accurate protein-coding gene predictions in GFF3, Genbank, or Sequin table format.
+- Handles draft genomes and metagenomes: Prodigal runs smoothly on finished genomes, draft genomes, and metagenomes.
+- Runs quickly: Prodigal analyzes the E. coli K-12 genome in 10 seconds on a modern MacBook Pro.
+- Runs unsupervised: Prodigal is an unsupervised machine learning algorithm. It does not need to be provided with any training data, and instead automatically learns the properties of the genome from the sequence itself, including RBS motif usage, start codon usage, and coding statistics.
+- Handles gaps and partial genes: The user can specify if Prodigal should build genes across runs of N's as well as how to handle genes at the edges of contigs.
+- Identifies translation initiation sites: Prodigal predicts the correct translation initiation site for most genes, and can output information about every potential start site in the genome, including confidence score, RBS motif, and much more.
 
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
@@ -126,36 +131,12 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 #(leave this here)
 %include fasrcsw_module_loads.rpmmacros
 
-
-#
-# FIXME
-#
-# configure and make the software here.  The default below is for standard 
-# GNU-toolchain style things -- hopefully it'll just work as-is.
-# 
-
-##prerequisite apps (uncomment and tweak if necessary).  If you add any here, 
-##make sure to add them to modulefile.lua below, too!
-#module load NAME/VERSION-RELEASE
-
-test "%{type}" == "MPI" && export FC=mpif90 F90=mpif90 CC=mpicc
-test "%{comp_name}" == "pgi" && export FC=pgf90 F90=pgf90 CC=pgcc CPPFLAGS="-DNDEBUG -DpgiFortran" FCFLAGS="-fPIC" F90FLAGS="-fPIC"
-
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
-%define ccdef "mpicc -I$HDF5_INCLUDE -L$HDF5_LIB"
-export CFLAGS=-fPIC
-export CXXFLAGS=-fPIC
 
-autoreconf
-./configure --prefix=%{_prefix} \
-    --enable-netcdf-4 \
-    --with-temp-large=/scratch
+make
 
-#if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
-#percent sign) to build in parallel
-make %{?_smp_mflags}
 
 
 #------------------- %%install (~ make install + create modulefile) -----------
@@ -186,10 +167,8 @@ make %{?_smp_mflags}
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
-mkdir -p %{buildroot}/%{_prefix}
-
-make install DESTDIR=%{buildroot}
-
+mkdir -p %{buildroot}/%{_prefix}/bin
+cp prodigal %{buildroot}/%{_prefix}/bin
 
 #(this should not need to be changed)
 #these files are nice to have; %%doc is not as prefix-friendly as I would like
@@ -279,17 +258,8 @@ end
 
 
 ---- environment changes (uncomment what is relevant)
-setenv("NETCDF_HOME",              "%{_prefix}")
-setenv("NETCDF_INCLUDE",           "%{_prefix}/include")
-setenv("NETCDF_LIB",               "%{_prefix}/lib")
-prepend_path("PATH",               "%{_prefix}/bin")
-prepend_path("CPATH",              "%{_prefix}/include")
-prepend_path("FPATH",              "%{_prefix}/include")
-prepend_path("INFOPATH",           "%{_prefix}/share/info")
-prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib")
-prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
-prepend_path("MANPATH",            "%{_prefix}/share/man")
-prepend_path("PKG_CONFIG_PATH",    "%{_prefix}/lib/pkgconfig")
+setenv("PRODIGAL_HOME",             "%{_prefix}")
+prepend_path("PATH",                "%{_prefix}/bin")
 EOF
 
 #------------------- App data file
@@ -313,7 +283,6 @@ buildcomments       : %{buildcomments}
 requestor           : %{requestor}
 requestref          : %{requestref}
 EOF
-
 
 
 #------------------- %%files (there should be no need to change this ) --------

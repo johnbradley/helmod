@@ -1,5 +1,5 @@
 #------------------- package info ----------------------------------------------
-#
+
 #
 # enter the simple app name, e.g. myapp
 #
@@ -30,15 +30,17 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static NetCDF version 4.1.3
+%define summary_static a high-level, high-performance dynamic programming language for technical computing
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.1.3.tar.gz
-Source: %{name}-%{version}.tar.gz
+URL: https://github.com/JuliaLang/julia/releases/download/v0.4.6/julia-0.4.6-full.tar.gz
+# Have to turn this off because a source rpm would be too big (https://bugzilla.redhat.com/show_bug.cgi?id=833427)
+# Source: julia-0.4.0-full.tar.gz
+
 
 #
 # there should be no need to change the following
@@ -53,7 +55,6 @@ License: see COPYING file or upstream packaging
 
 Release: %{release_full}
 Prefix: %{_prefix}
-
 
 #
 # Macros for setting app data 
@@ -72,30 +73,26 @@ Prefix: %{_prefix}
 %define compiler %( if [[ %{getenv:TYPE} == "Comp" || %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_COMPS}" ]]; then echo "%{getenv:FASRCSW_COMPS}"; fi; else echo "system"; fi)
 %define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
-
-
-%define builddependencies hdf5/1.8.12-fasrc12 zlib/1.2.8-fasrc07
-%define rundependencies %{builddependencies}
-%define buildcomments %{nil}
-%define requestor %{nil}
-%define requestref %{nil}
+%define builddependencies cmake/2.8.12.2-fasrc01
+%define rundependencies %{nil}
+%define buildcomments This Julia was built against the general compute processor architecture (JULIA_CPU_TARGET=core2) for Odyssey (i.e. general and interact partitions).  It will not work for login nodes and may not work on many nodes in serial_requeue.
+%define requestor Einar Arnason <einararn@gmail.com>
+%define requestref RCRT:104095
 
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
 # aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
-%define apptags aci-ref-app-category:Libraries; aci-ref-app-tag:I/O
+%define apptags %{nil} 
 %define apppublication %{nil}
-
 
 
 #
 # enter a description, often a paragraph; unless you prefix lines with spaces, 
 # rpm will format it, so no need to worry about the wrapping
 #
-# NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
-#
 %description
-NetCDF (network Common Data Form) is a set of software libraries and machine-independent data formats that support the creation, access, and sharing of array-oriented scientific data. Distributions are provided for Java and C/C++/Fortran.
+Julia is a high-level, high-performance dynamic programming language for technical computing, with syntax that is familiar to users of other technical computing environments. It provides a sophisticated compiler, distributed parallel execution, numerical accuracy, and an extensive mathematical function library. The library, largely written in Julia itself, also integrates mature, best-of-breed C and Fortran libraries for linear algebra, random number generation, signal processing, and string processing. In addition, the Julia developer community is contributing a number of external packages through Julia¿s built-in package manager at a rapid pace. IJulia, a collaboration between the IPython and Julia communities, provides a powerful browser-based graphical notebook interface to Julia.
+
 
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
@@ -113,7 +110,7 @@ NetCDF (network Common Data Form) is a set of software libraries and machine-ind
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD 
 rm -rf %{name}-%{version}
-tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-%{version}.tar.*
+tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-%{version}-full.tar.*
 cd %{name}-%{version}
 chmod -Rf a+rX,u+w,g-w,o-w .
 
@@ -138,24 +135,53 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 ##make sure to add them to modulefile.lua below, too!
 #module load NAME/VERSION-RELEASE
 
-test "%{type}" == "MPI" && export FC=mpif90 F90=mpif90 CC=mpicc
-test "%{comp_name}" == "pgi" && export FC=pgf90 F90=pgf90 CC=pgcc CPPFLAGS="-DNDEBUG -DpgiFortran" FCFLAGS="-fPIC" F90FLAGS="-fPIC"
-
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
-%define ccdef "mpicc -I$HDF5_INCLUDE -L$HDF5_LIB"
-export CFLAGS=-fPIC
-export CXXFLAGS=-fPIC
-
-autoreconf
-./configure --prefix=%{_prefix} \
-    --enable-netcdf-4 \
-    --with-temp-large=/scratch
-
 #if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
 #percent sign) to build in parallel
+
+#FIXME -- hopefully these openblas issues go away in the future
+#out of the box first failed like so:
+#	make[5]: Entering directory `/odyssey/rc_admin/jab/sw/fasrcsw/rpmbuild/BUILD/julia-0.3.0.rc2/deps/openblas-v0.2.10/kernel'
+#	../kernel/x86_64/dgemm_kernel_4x4_haswell.S: Assembler messages:
+#	../kernel/x86_64/dgemm_kernel_4x4_haswell.S:1398: Error: no such instruction: `vpermpd $ 0xb1,%ymm0,%ymm0'
+#	../kernel/x86_64/dgemm_kernel_4x4_haswell.S:1398: Error: no such instruction: `vpermpd $ 0x1b,%ymm0,%ymm0'
+#	../kernel/x86_64/dgemm_kernel_4x4_haswell.S:1398: Error: no such instruction: `vpermpd $ 0xb1,%ymm0,%ymm0'
+#	...tons of those
+#this describes it:
+#	https://github.com/JuliaLang/julia/issues/7240
+#this workaround:
+#	https://github.com/JuliaLang/julia/issues/7240#issuecomment-46168120
+#	$ echo 'OPENBLAS_DYNAMIC_ARCH=0' > Make.user
+#	but still fails:
+#		make[5]: Entering directory `/odyssey/rc_admin/jab/sw/fasrcsw/rpmbuild/BUILD/julia-0.3.0.rc2/deps/openblas-v0.2.10/kernel'
+#		gcc: ../kernel/x86_64/: linker input file unused because linking not done
+#		gcc: ../kernel/x86_64/: linker input file unused because linking not done
+#		gcc: ../kernel/x86_64/: linker input file unused because linking not done
+#		...tons of those
+#		ar: sgemm_kernel.o: No such file or directory
+#		make[5]: *** [libs] Error 1
+#		make[5]: Leaving directory `/odyssey/rc_admin/jab/sw/fasrcsw/rpmbuild/BUILD/julia-0.3.0.rc2/deps/openblas-v0.2.10/kernel'
+#		make[4]: *** [libs] Error 1
+#		make[4]: Leaving directory `/odyssey/rc_admin/jab/sw/fasrcsw/rpmbuild/BUILD/julia-0.3.0.rc2/deps/openblas-v0.2.10'
+#		*** Clean the OpenBLAS build with 'make -C deps clean-openblas'. Rebuild with 'make OPENBLAS_USE_THREAD=0 if OpenBLAS had trouble linking libpthread.so, and with 'make OPENBLAS_TARGET_ARCH=NEHALEM' if there were errors building SandyBridge support. Both these options can also be used simultaneously. ***
+#		...
+#try the other workaround:
+#	https://github.com/JuliaLang/julia/issues/7240#issuecomment-45972436
+#	$ echo override USE_SYSTEM_BLAS = 1 >> Make.user
+#sed -i -e 's?^OPENBLAS_TARGET_ARCH.*?OPENBLAS_TARGET_ARCH=BULLDOZER?' Make.inc
+cat <<EOF > Make.user
+USE_SYSTEM_BLAS=1
+USE_SYSTEM_LAPACK=1
+JULIA_CPU_TARGET=core2
+EOF
+
+make full-source-dist
+
 make %{?_smp_mflags}
+
+
 
 
 #------------------- %%install (~ make install + create modulefile) -----------
@@ -188,7 +214,32 @@ cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
 
-make install DESTDIR=%{buildroot}
+
+#make these absolute symbolic links relative
+
+#./julia -> /odyssey/rc_admin/jab/sw/fasrcsw/rpmbuild/BUILD/julia-0.3.0.rc2/usr/bin/julia
+rm ./julia
+ln -s usr/bin/julia julia
+
+#./usr/share/julia/base -> /odyssey/rc_admin/jab/sw/fasrcsw/rpmbuild/BUILD/julia-0.3.0.rc2/base
+rm ./usr/share/julia/base
+ln -s ../../../base ./usr/share/julia/base
+
+#./usr/share/julia/doc -> /odyssey/rc_admin/jab/sw/fasrcsw/rpmbuild/BUILD/julia-0.3.0.rc2/doc
+# rm ./usr/share/julia/doc
+# ln -s ../../../doc ./usr/share/julia/doc
+
+#./usr/share/julia/examples -> /odyssey/rc_admin/jab/sw/fasrcsw/rpmbuild/BUILD/julia-0.3.0.rc2/examples
+# rm ./usr/share/julia/examples
+# ln -s ../../../examples ./usr/share/julia/examples
+
+#./usr/share/julia/test -> /odyssey/rc_admin/jab/sw/fasrcsw/rpmbuild/BUILD/julia-0.3.0.rc2/test
+# rm ./usr/share/julia/test
+# ln -s ../../../test ./usr/share/julia/test
+
+
+#forklift the whole thing, source and all
+rsync -av ./ %{buildroot}/%{_prefix}/
 
 
 #(this should not need to be changed)
@@ -278,18 +329,8 @@ for i in string.gmatch("%{rundependencies}","%%S+") do
 end
 
 
----- environment changes (uncomment what is relevant)
-setenv("NETCDF_HOME",              "%{_prefix}")
-setenv("NETCDF_INCLUDE",           "%{_prefix}/include")
-setenv("NETCDF_LIB",               "%{_prefix}/lib")
-prepend_path("PATH",               "%{_prefix}/bin")
-prepend_path("CPATH",              "%{_prefix}/include")
-prepend_path("FPATH",              "%{_prefix}/include")
-prepend_path("INFOPATH",           "%{_prefix}/share/info")
-prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib")
-prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
-prepend_path("MANPATH",            "%{_prefix}/share/man")
-prepend_path("PKG_CONFIG_PATH",    "%{_prefix}/lib/pkgconfig")
+-- environment changes (uncomment what is relevant)
+prepend_path("PATH",                "%{_prefix}/usr/bin")
 EOF
 
 #------------------- App data file
@@ -316,6 +357,7 @@ EOF
 
 
 
+
 #------------------- %%files (there should be no need to change this ) --------
 
 %files
@@ -323,9 +365,7 @@ EOF
 %defattr(-,root,root,-)
 
 %{_prefix}/*
-
-
-
+%{_prefix}/.mailmap
 #------------------- scripts (there should be no need to change these) --------
 
 

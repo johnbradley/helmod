@@ -30,15 +30,15 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static NetCDF version 4.1.3
+%define summary_static The Pole EXpansion and Selected Inversion (PEXSI) method is a fast method for electronic structure calculation based on Kohn-Sham density functional theory.
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.1.3.tar.gz
-Source: %{name}-%{version}.tar.gz
+URL:  https://math.berkeley.edu/~linlin/pexsi/download/download.php?file=pexsi_v0.9.0.tar.gz
+Source: %{name}_v%{version}.tar.gz
 
 #
 # there should be no need to change the following
@@ -73,17 +73,17 @@ Prefix: %{_prefix}
 %define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
 
-
-%define builddependencies hdf5/1.8.12-fasrc12 zlib/1.2.8-fasrc07
+%define builddependencies superlu_dist/3.3-fasrc01 parmetis/4.0.3-fasrc01
 %define rundependencies %{builddependencies}
 %define buildcomments %{nil}
-%define requestor %{nil}
-%define requestref %{nil}
+%define requestor Amit Levi <alevi@cfa.harvard.edu
+%define requestref RCRT:104944
+
 
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
 # aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
-%define apptags aci-ref-app-category:Libraries; aci-ref-app-tag:I/O
+%define apptags %{nil} 
 %define apppublication %{nil}
 
 
@@ -95,8 +95,7 @@ Prefix: %{_prefix}
 # NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
 #
 %description
-NetCDF (network Common Data Form) is a set of software libraries and machine-independent data formats that support the creation, access, and sharing of array-oriented scientific data. Distributions are provided for Java and C/C++/Fortran.
-
+The Pole EXpansion and Selected Inversion (PEXSI) method is a fast method for electronic structure calculation based on Kohn-Sham density functional theory. It efficiently evaluates certain selected elements of matrix functions, e.g., the Fermi-Dirac function of the KS Hamiltonian, which yields a density matrix. It can be used as an alternative to diagonalization methods for obtaining the density, energy and forces in electronic structure calculations. The PEXSI library is written in C++, and uses message passing interface (MPI) to parallelize the computation on distributed memory computing systems and achieve scalability on more than 10,000 processors.
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
 
@@ -112,9 +111,9 @@ NetCDF (network Common Data Form) is a set of software libraries and machine-ind
 
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD 
-rm -rf %{name}-%{version}
-tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-%{version}.tar.*
-cd %{name}-%{version}
+rm -rf %{name}_v%{version}
+tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}_v%{version}.tar.*
+cd %{name}_v%{version}
 chmod -Rf a+rX,u+w,g-w,o-w .
 
 
@@ -138,24 +137,71 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 ##make sure to add them to modulefile.lua below, too!
 #module load NAME/VERSION-RELEASE
 
-test "%{type}" == "MPI" && export FC=mpif90 F90=mpif90 CC=mpicc
-test "%{comp_name}" == "pgi" && export FC=pgf90 F90=pgf90 CC=pgcc CPPFLAGS="-DNDEBUG -DpgiFortran" FCFLAGS="-fPIC" F90FLAGS="-fPIC"
-
 umask 022
-cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
+cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}_v%{version}
 
-%define ccdef "mpicc -I$HDF5_INCLUDE -L$HDF5_LIB"
-export CFLAGS=-fPIC
-export CXXFLAGS=-fPIC
+export CCHOME=`which $CC`
+export CCHOME="${CCHOME%/bin/*}"
 
-autoreconf
-./configure --prefix=%{_prefix} \
-    --enable-netcdf-4 \
-    --with-temp-large=/scratch
+export GFORTRAN_LIB=${CCHOME}/lib64/libgfortran.a
+export LAPACK_DIR=/usr/lib64
+export BLAS_DIR=/usr/lib64
+export LAPACK_LIB=${LAPACK_DIR}/liblapack.a
+export BLAS_LIB=${BLAS_DIR}/libopenblas.a
 
-#if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
-#percent sign) to build in parallel
-make %{?_smp_mflags}
+if [[ "%{comp_name}" == "intel" ]]; then 
+    GFORTRAN_LIB=""
+    LAPACK_LIB="-mkl"
+    BLAS_LIB="-mkl"
+fi
+
+cp config/make.inc.linux.gnu make.inc
+
+cat <<EOF | patch make.inc
+32c32
+< PEXSI_DIR     = \$(HOME)/Projects/pexsi
+---
+> PEXSI_DIR     = ${FASRCSW_DEV}/rpmbuild/BUILD/%{name}_v%{version}
+35,37c35,37
+< DSUPERLU_DIR  = \$(HOME)/Software/SuperLU_DIST_3.3
+< METIS_DIR     = \$(HOME)/Software/metis-5.1.0/build_release
+< PARMETIS_DIR  = \$(HOME)/Software/parmetis-4.0.3/build_release
+---
+> DSUPERLU_DIR  = ${SUPERLU_HOME}
+> METIS_DIR     = ${PARMETIS_HOME}
+> PARMETIS_DIR  = ${PARMETIS_HOME}
+39,40c39,40
+< LAPACK_DIR    = \$(HOME)/Software/lapack-3.5.0
+< BLAS_DIR      = \$(HOME)/Software/OpenBLAS/build_release
+---
+> LAPACK_DIR    = ${LAPACK_DIR}
+> BLAS_DIR      = ${BLAS_DIR}
+44c44
+< DSUPERLU_INCLUDE = -I\${DSUPERLU_DIR}/SRC
+---
+> DSUPERLU_INCLUDE = -I\${DSUPERLU_DIR}/include
+49c49
+< GFORTRAN_LIB     = /usr/lib/gcc/x86_64-linux-gnu/4.8/libgfortran.a
+---
+> GFORTRAN_LIB     = ${GFORTRAN_LIB}
+50c50
+< LAPACK_LIB       = \${LAPACK_DIR}/liblapack.a
+---
+> LAPACK_LIB       = ${LAPACK_LIB}
+51,52c51,52
+< BLAS_LIB         = \${BLAS_DIR}/lib/libopenblas.a
+< DSUPERLU_LIB     = \${DSUPERLU_DIR}/build_release/lib/libsuperlu_dist_3.3.a
+---
+> BLAS_LIB         = ${BLAS_LIB}
+> DSUPERLU_LIB     = ${DSUPERLU_DIR}/lib/libsuperlu_dist_3.3.a
+57c57
+< PARMETIS_LIB     = -L\${PARMETIS_DIR}/libparmetis -lparmetis 
+---
+> PARMETIS_LIB     = -L${PARMETIS_DIR}/lib -lparmetis 
+EOF
+
+make lib
+
 
 
 #------------------- %%install (~ make install + create modulefile) -----------
@@ -184,12 +230,11 @@ make %{?_smp_mflags}
 #
 
 umask 022
-cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
+cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}_v%{version}
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
-mkdir -p %{buildroot}/%{_prefix}
-
-make install DESTDIR=%{buildroot}
-
+mkdir -p %{buildroot}/%{_prefix}/lib
+cp src/libpexsi_linux.a %{buildroot}/%{_prefix}/lib
+cp -r include %{buildroot}/%{_prefix}
 
 #(this should not need to be changed)
 #these files are nice to have; %%doc is not as prefix-friendly as I would like
@@ -279,17 +324,13 @@ end
 
 
 ---- environment changes (uncomment what is relevant)
-setenv("NETCDF_HOME",              "%{_prefix}")
-setenv("NETCDF_INCLUDE",           "%{_prefix}/include")
-setenv("NETCDF_LIB",               "%{_prefix}/lib")
-prepend_path("PATH",               "%{_prefix}/bin")
-prepend_path("CPATH",              "%{_prefix}/include")
-prepend_path("FPATH",              "%{_prefix}/include")
-prepend_path("INFOPATH",           "%{_prefix}/share/info")
-prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib")
-prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
-prepend_path("MANPATH",            "%{_prefix}/share/man")
-prepend_path("PKG_CONFIG_PATH",    "%{_prefix}/lib/pkgconfig")
+setenv("PEXSI_HOME",                "%{_prefix}")
+setenv("PEXSI_LIB",                 "%{_prefix}/lib")
+setenv("PEXSI_INCLUDE",             "%{_prefix}/include")
+prepend_path("CPATH",               "%{_prefix}/include")
+prepend_path("FPATH",               "%{_prefix}/include")
+prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib")
+prepend_path("LIBRARY_PATH",        "%{_prefix}/lib")
 EOF
 
 #------------------- App data file
@@ -313,7 +354,6 @@ buildcomments       : %{buildcomments}
 requestor           : %{requestor}
 requestref          : %{requestref}
 EOF
-
 
 
 #------------------- %%files (there should be no need to change this ) --------

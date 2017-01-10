@@ -30,15 +30,15 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static NetCDF version 4.1.3
+%define summary_static CP2K is a quantum chemistry and solid state physics software package that can perform atomistic simulations of solid state, liquid, molecular, periodic, material, crystal, and biological systems.
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.1.3.tar.gz
-Source: %{name}-%{version}.tar.gz
+URL: http://downloads.sourceforge.net/project/cp2k/cp2k-4.1.tar.bz2
+Source: %{name}-%{version}.tar.bz2
 
 #
 # there should be no need to change the following
@@ -73,8 +73,7 @@ Prefix: %{_prefix}
 %define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
 
-
-%define builddependencies hdf5/1.8.12-fasrc12 zlib/1.2.8-fasrc07
+%define builddependencies pexsi/0.9.0-fasrc01 elpa/2016.05.003-fasrc01 fftw/3.3.5-fasrc01 libint/1.1.5-fasrc01 libxc/3.0.0-fasrc01 scalapack/2.0.2-fasrc01
 %define rundependencies %{builddependencies}
 %define buildcomments %{nil}
 %define requestor %{nil}
@@ -83,7 +82,7 @@ Prefix: %{_prefix}
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
 # aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
-%define apptags aci-ref-app-category:Libraries; aci-ref-app-tag:I/O
+%define apptags %{nil} 
 %define apppublication %{nil}
 
 
@@ -95,8 +94,7 @@ Prefix: %{_prefix}
 # NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
 #
 %description
-NetCDF (network Common Data Form) is a set of software libraries and machine-independent data formats that support the creation, access, and sharing of array-oriented scientific data. Distributions are provided for Java and C/C++/Fortran.
-
+CP2K is a quantum chemistry and solid state physics software package that can perform atomistic simulations of solid state, liquid, molecular, periodic, material, crystal, and biological systems. CP2K provides a general framework for different modeling methods such as DFT using the mixed Gaussian and plane waves approaches GPW and GAPW. Supported theory levels include DFTB, LDA, GGA, MP2, RPA, semi-empirical methods (AM1, PM3, PM6, RM1, MNDO, …), and classical force fields (AMBER, CHARMM, …). CP2K can do simulations of molecular dynamics, metadynamics, Monte Carlo, Ehrenfest dynamics, vibrational analysis, core level spectroscopy, energy minimization, and transition state optimization using NEB or dimer method.
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
 
@@ -138,24 +136,33 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 ##make sure to add them to modulefile.lua below, too!
 #module load NAME/VERSION-RELEASE
 
-test "%{type}" == "MPI" && export FC=mpif90 F90=mpif90 CC=mpicc
-test "%{comp_name}" == "pgi" && export FC=pgf90 F90=pgf90 CC=pgcc CPPFLAGS="-DNDEBUG -DpgiFortran" FCFLAGS="-fPIC" F90FLAGS="-fPIC"
-
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
-%define ccdef "mpicc -I$HDF5_INCLUDE -L$HDF5_LIB"
-export CFLAGS=-fPIC
-export CXXFLAGS=-fPIC
 
-autoreconf
-./configure --prefix=%{_prefix} \
-    --enable-netcdf-4 \
-    --with-temp-large=/scratch
+if [[ "%{comp_name}" == "gcc" ]]; then
+
+module load acml/5.3.1-fasrc01
+
+cat <<EOF > arch/odyssey.psmp
+CC         = gcc
+CPP        =
+FC         = mpif90
+LD         = mpif90
+AR         = ar -r
+DFLAGS     = -D__FFTW3 -D__LIBINT -D__LIBXC2 -D__LIBINT_MAX_AM=7 -D__LIBDERIV_MAX_AM1=6 -D__MAX_CONTR=4  -D__parallel -D__SCALAPACK
+CPPFLAGS   =
+FCFLAGS    = \$(DFLAGS) -O2 -ffast-math -ffree-form -ffree-line-length-none -fopenmp -ftree-vectorize -funroll-loops  -mtune=native -I${ACML_INCLUDE} -I${FFTW_INCLUDE} -I${LIBINT_INCLUDE} -I${LIBXC_INCLUDE}
+LDFLAGS    = \$(FCFLAGS) -static-libgfortran
+LIBS       = ${SCALAPACK_HOME}/lib/libscalapack.a ${ACML_LIB}/libacml.a  ${FFTW_LIB}/libfftw3.a ${FFTW_LIB}/libfftw3_threads.a  ${LIBXC_LIB}/libxcf90.a ${LIBXC_LIB}/libxc.a  ${LIBINT_LIB}/libderiv.a  ${LIBINT_LIB}/libint.a
+EOF
+
+fi
 
 #if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
 #percent sign) to build in parallel
-make %{?_smp_mflags}
+(cd makefiles && make ARCH=odyssey VERSION=psmp)
+
 
 
 #------------------- %%install (~ make install + create modulefile) -----------
@@ -186,9 +193,9 @@ make %{?_smp_mflags}
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
-mkdir -p %{buildroot}/%{_prefix}
-
-make install DESTDIR=%{buildroot}
+mkdir -p %{buildroot}/%{_prefix}/{lib,bin}
+cp -r exe/odyssey/*  %{buildroot}/%{_prefix}/bin
+cp -r lib/odyssey/psmp/*  %{buildroot}/%{_prefix}/lib
 
 
 #(this should not need to be changed)
@@ -279,17 +286,11 @@ end
 
 
 ---- environment changes (uncomment what is relevant)
-setenv("NETCDF_HOME",              "%{_prefix}")
-setenv("NETCDF_INCLUDE",           "%{_prefix}/include")
-setenv("NETCDF_LIB",               "%{_prefix}/lib")
-prepend_path("PATH",               "%{_prefix}/bin")
-prepend_path("CPATH",              "%{_prefix}/include")
-prepend_path("FPATH",              "%{_prefix}/include")
-prepend_path("INFOPATH",           "%{_prefix}/share/info")
-prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib")
-prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
-prepend_path("MANPATH",            "%{_prefix}/share/man")
-prepend_path("PKG_CONFIG_PATH",    "%{_prefix}/lib/pkgconfig")
+setenv("CP2K_HOME",                "%{_prefix}")
+setenv("CP2K_LIB",                 "%{_prefix}/lib")
+prepend_path("PATH",                "%{_prefix}/bin")
+prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib")
+prepend_path("LIBRARY_PATH",        "%{_prefix}/lib")
 EOF
 
 #------------------- App data file
@@ -313,7 +314,6 @@ buildcomments       : %{buildcomments}
 requestor           : %{requestor}
 requestref          : %{requestref}
 EOF
-
 
 
 #------------------- %%files (there should be no need to change this ) --------

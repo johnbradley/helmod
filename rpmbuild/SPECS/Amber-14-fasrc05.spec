@@ -1,5 +1,5 @@
 #------------------- package info ----------------------------------------------
-#
+
 #
 # enter the simple app name, e.g. myapp
 #
@@ -30,15 +30,17 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static NetCDF version 4.1.3
+%define summary_static A package of molecular simulation programs.
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.1.3.tar.gz
-Source: %{name}-%{version}.tar.gz
+# Need both Amber14 and AmberTools14
+#
+URL: http://ambermd.org/Amber14-get.html
+Source: Amber14.tar.bz2
 
 #
 # there should be no need to change the following
@@ -56,6 +58,14 @@ Prefix: %{_prefix}
 
 
 #
+# enter a description, often a paragraph; unless you prefix lines with spaces, 
+# rpm will format it, so no need to worry about the wrapping
+#
+%description
+A set of molecular mechanical force fields for the simulation of biomolecules (which are in the public domain, and are used in a variety of simulation programs); and a package of molecular simulation programs which includes source code and demos.
+
+
+#
 # Macros for setting app data 
 # The first set can probably be left as is
 # the nil construct should be used for empty values
@@ -69,33 +79,20 @@ Prefix: %{_prefix}
 %define builddate %(date)
 %define buildhost %(hostname)
 %define buildhostversion 1
-%define compiler %( if [[ %{getenv:TYPE} == "Comp" || %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_COMPS}" ]]; then echo "%{getenv:FASRCSW_COMPS}"; fi; else echo "system"; fi)
-%define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
 
-
-%define builddependencies hdf5/1.8.12-fasrc12 zlib/1.2.8-fasrc07
+%define builddependencies intel-mkl/11.0.0.079-fasrc02 cuda/6.0-fasrc01
 %define rundependencies %{builddependencies}
-%define buildcomments %{nil}
-%define requestor %{nil}
-%define requestref %{nil}
+%define buildcomments Built with CUDA 6.0 on shakgpu, using AmberTools15.  
+%define requestor Xiaole Zhu <xlzhu@fas.harvard.edu>
+%define requestref RCRT:105082
 
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
-# aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
-%define apptags aci-ref-app-category:Libraries; aci-ref-app-tag:I/O
+# aci-ref-app-category:Programming Tools; jaci-ref-app-tag:Compiler
+%define apptags aci-ref-app-category:Applications; aci-ref-app-tag:Chemistry; aci-ref-app-tag:Molecular dynamics; aci-ref-app-tag:Molecular mechanics
 %define apppublication %{nil}
 
-
-
-#
-# enter a description, often a paragraph; unless you prefix lines with spaces, 
-# rpm will format it, so no need to worry about the wrapping
-#
-# NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
-#
-%description
-NetCDF (network Common Data Form) is a set of software libraries and machine-independent data formats that support the creation, access, and sharing of array-oriented scientific data. Distributions are provided for Java and C/C++/Fortran.
 
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
@@ -112,9 +109,10 @@ NetCDF (network Common Data Form) is a set of software libraries and machine-ind
 
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD 
-rm -rf %{name}-%{version}
-tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-%{version}.tar.*
-cd %{name}-%{version}
+rm -rf amber14
+tar xjvf "$FASRCSW_DEV"/rpmbuild/SOURCES/AmberTools15.tar.bz2
+tar xjvf "$FASRCSW_DEV"/rpmbuild/SOURCES/Amber14.tar.bz2
+cd amber14
 chmod -Rf a+rX,u+w,g-w,o-w .
 
 
@@ -138,24 +136,34 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 ##make sure to add them to modulefile.lua below, too!
 #module load NAME/VERSION-RELEASE
 
-test "%{type}" == "MPI" && export FC=mpif90 F90=mpif90 CC=mpicc
-test "%{comp_name}" == "pgi" && export FC=pgf90 F90=pgf90 CC=pgcc CPPFLAGS="-DNDEBUG -DpgiFortran" FCFLAGS="-fPIC" F90FLAGS="-fPIC"
-
 umask 022
-cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
+cd "$FASRCSW_DEV"/rpmbuild/BUILD/amber14
 
-%define ccdef "mpicc -I$HDF5_INCLUDE -L$HDF5_LIB"
-export CFLAGS=-fPIC
-export CXXFLAGS=-fPIC
+export AMBERHOME="${FASRCSW_DEV}/rpmbuild/BUILD/amber14"
 
-autoreconf
-./configure --prefix=%{_prefix} \
-    --enable-netcdf-4 \
-    --with-temp-large=/scratch
+sed -i -e 's?foptflags="-ip -O3"?foptflags="-O3"?' \
+       -e 's?coptflags="-ip -O3"?coptflags="-O3"?' \
+       -e "s?pmemd_coptflags='-ip -O3 -no-prec-div'?pmemd_coptflags='-O3 -no-prec-div'?" \
+       -e 's?-ip -O3 -no-prec-div?-O3 -no-prec-div?' AmberTools/src/configure2
+sed -i -e 's?FOPTFLAGS="-ip -O3"?FOPTFLAGS="-O3"?' AmberTools/src/cpptraj/configure
 
-#if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
-#percent sign) to build in parallel
-make %{?_smp_mflags}
+unset MKL_HOME
+
+test "%{comp_name}" == "intel" &&  ./configure -cuda -mkl intel
+test "%{comp_name}" == "gcc" && ./configure -cuda gnu
+
+test "%{comp_name}" == "intel" && sed -i -e 's?^PMEMD_F90=ifort?PMEMD_F90=ifort -I\$\$INTEL_HOME/mkl/include/fftw ?' src/config.h
+
+make install
+
+make clean
+test "%{comp_name}" == "intel" &&  ./configure -mkl intel
+test "%{comp_name}" == "gcc" && ./configure gnu
+
+test "%{comp_name}" == "intel" && sed -i -e 's?^PMEMD_F90=ifort?PMEMD_F90=ifort -I\$\$INTEL_HOME/mkl/include/fftw ?' src/config.h
+
+make install
+
 
 
 #------------------- %%install (~ make install + create modulefile) -----------
@@ -184,11 +192,10 @@ make %{?_smp_mflags}
 #
 
 umask 022
-cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
-echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
+cd "$FASRCSW_DEV"/rpmbuild/BUILD/amber14
+echo %{buildroot} | grep -q amber14 && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
-
-make install DESTDIR=%{buildroot}
+cp -r * %{buildroot}/%{_prefix}
 
 
 #(this should not need to be changed)
@@ -259,7 +266,6 @@ cat > %{buildroot}/%{_prefix}/modulefile.lua <<EOF
 local helpstr = [[
 %{name}-%{version}-%{release_short}
 %{summary_static}
-%{buildcomments}
 ]]
 help(helpstr,"\n")
 
@@ -279,24 +285,21 @@ end
 
 
 ---- environment changes (uncomment what is relevant)
-setenv("NETCDF_HOME",              "%{_prefix}")
-setenv("NETCDF_INCLUDE",           "%{_prefix}/include")
-setenv("NETCDF_LIB",               "%{_prefix}/lib")
-prepend_path("PATH",               "%{_prefix}/bin")
-prepend_path("CPATH",              "%{_prefix}/include")
-prepend_path("FPATH",              "%{_prefix}/include")
-prepend_path("INFOPATH",           "%{_prefix}/share/info")
-prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib")
-prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
-prepend_path("MANPATH",            "%{_prefix}/share/man")
-prepend_path("PKG_CONFIG_PATH",    "%{_prefix}/lib/pkgconfig")
+setenv("AMBERHOME",                 "%{_prefix}")
+prepend_path("PATH",                "%{_prefix}/bin")
+prepend_path("CPATH",               "%{_prefix}/include")
+prepend_path("FPATH",               "%{_prefix}/include")
+prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib")
+prepend_path("LIBRARY_PATH",        "%{_prefix}/lib")
 EOF
+
 
 #------------------- App data file
 cat > $FASRCSW_DEV/appdata/%{modulename}.%{type}.dat <<EOF
 appname             : %{appname}
 appversion          : %{appversion}
 description         : %{appdescription}
+module              : %{modulename}
 tags                : %{apptags}
 publication         : %{apppublication}
 modulename          : %{modulename}
@@ -313,7 +316,6 @@ buildcomments       : %{buildcomments}
 requestor           : %{requestor}
 requestref          : %{requestref}
 EOF
-
 
 
 #------------------- %%files (there should be no need to change this ) --------

@@ -30,15 +30,15 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static NetCDF version 4.1.3
+%define summary_static Pipeline for the inference of orthologs among complete genomes
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.1.3.tar.gz
-Source: %{name}-%{version}.tar.gz
+URL: http://omabrowser.org/standalone/OMA.1.0.6.tgz
+Source: %{name}.%{version}.tgz
 
 #
 # there should be no need to change the following
@@ -74,17 +74,17 @@ Prefix: %{_prefix}
 
 
 
-%define builddependencies hdf5/1.8.12-fasrc12 zlib/1.2.8-fasrc07
+%define builddependencies %{nil}
 %define rundependencies %{builddependencies}
 %define buildcomments %{nil}
-%define requestor %{nil}
-%define requestref %{nil}
+%define requestor Tauana Cunha <tauanacunha@g.harvard.edu>
+%define requestref RCRT:104623
 
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
 # aci-ref-app-category:Programming Tools; aci-ref-app-tag:Compiler
-%define apptags aci-ref-app-category:Libraries; aci-ref-app-tag:I/O
-%define apppublication %{nil}
+%define apptags aci-ref-app-category:Applications; aci-ref-app-tag:Phylogenetic Analysis
+%define apppublication Inferring hierarchical orthologous groups from orthologous gene pairs. Altenhoff AM, Gil M, Gonnet GH, Dessimoz C. PLoS One. 2013;8(1):e53786. doi: 10.1371/journal.pone.0053786. Epub 2013 Jan 14.
 
 
 
@@ -95,7 +95,7 @@ Prefix: %{_prefix}
 # NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
 #
 %description
-NetCDF (network Common Data Form) is a set of software libraries and machine-independent data formats that support the creation, access, and sharing of array-oriented scientific data. Distributions are provided for Java and C/C++/Fortran.
+The OMA (“Orthologous MAtrix”) is a pipeline for the inference of orthologs among complete genomes. The distinctive features of OMA are its broad scope and size, high quality of inferences, feature-rich web interface, availability of data in a wide range of formats and interfaces, and frequent update schedule of two releases per year. OMA’s inference algorithm consists of three main phases. First, to infer homologous sequences (sequences of common ancestry), all-against-all Smith-Waterman alignments are computed and significant matches are retained. Second, to infer orthologous pairs (the subset of homologs related by speciation events), mutually closest homologs are identified based on evolutionary distances, taking into account distance inference uncertainty and the possibility for differential gene losses (for more details, see Roth et al 2008). Third, these orthologs are clustered in two different ways, which are useful for different purposes: (a) we identify cliques of orthologous pairs (“OMA groups”), which are useful as marker genes for phylogenetic reconstruction and tend to be very specific; (b) we identify hierarchical orthologous groups (“HOGs”), groups of genes defined for particular taxonomic ranges and identify all genes that have descended from a common ancestral gene in that taxonomic range. Fore more details on the algorithm to infer HOGs from orthologous pairs, see Altenhoff et al. 2013. The OMA pipeline can also run on custom genomic/transcriptomic data using the OMA stand-alone software, and it is even possible to combine precomputed data with custom data by exporting parts of the OMA database.
 
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
@@ -113,7 +113,8 @@ NetCDF (network Common Data Form) is a set of software libraries and machine-ind
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD 
 rm -rf %{name}-%{version}
-tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}-%{version}.tar.*
+tar xvf "$FASRCSW_DEV"/rpmbuild/SOURCES/%{name}.%{version}.tgz
+mv %{name}.%{version} %{name}-%{version}
 cd %{name}-%{version}
 chmod -Rf a+rX,u+w,g-w,o-w .
 
@@ -127,35 +128,7 @@ chmod -Rf a+rX,u+w,g-w,o-w .
 %include fasrcsw_module_loads.rpmmacros
 
 
-#
-# FIXME
-#
-# configure and make the software here.  The default below is for standard 
-# GNU-toolchain style things -- hopefully it'll just work as-is.
-# 
 
-##prerequisite apps (uncomment and tweak if necessary).  If you add any here, 
-##make sure to add them to modulefile.lua below, too!
-#module load NAME/VERSION-RELEASE
-
-test "%{type}" == "MPI" && export FC=mpif90 F90=mpif90 CC=mpicc
-test "%{comp_name}" == "pgi" && export FC=pgf90 F90=pgf90 CC=pgcc CPPFLAGS="-DNDEBUG -DpgiFortran" FCFLAGS="-fPIC" F90FLAGS="-fPIC"
-
-umask 022
-cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
-
-%define ccdef "mpicc -I$HDF5_INCLUDE -L$HDF5_LIB"
-export CFLAGS=-fPIC
-export CXXFLAGS=-fPIC
-
-autoreconf
-./configure --prefix=%{_prefix} \
-    --enable-netcdf-4 \
-    --with-temp-large=/scratch
-
-#if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
-#percent sign) to build in parallel
-make %{?_smp_mflags}
 
 
 #------------------- %%install (~ make install + create modulefile) -----------
@@ -185,10 +158,17 @@ make %{?_smp_mflags}
 
 umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
+cd bin
+ln -s oma OMA
+cd ..
+
 echo %{buildroot} | grep -q %{name}-%{version} && rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_prefix}
-
-make install DESTDIR=%{buildroot}
+#make install DESTDIR=%{buildroot}
+#./install.sh %{buildroot}/%{_prefix}
+for f in bin darwinlib DB install.sh lib LICENSE Manual OMA.drw README.oma ToyExample; do
+	cp -aR "$f" '%{buildroot}/%{_prefix}/'
+done
 
 
 #(this should not need to be changed)
@@ -279,18 +259,12 @@ end
 
 
 ---- environment changes (uncomment what is relevant)
-setenv("NETCDF_HOME",              "%{_prefix}")
-setenv("NETCDF_INCLUDE",           "%{_prefix}/include")
-setenv("NETCDF_LIB",               "%{_prefix}/lib")
-prepend_path("PATH",               "%{_prefix}/bin")
-prepend_path("CPATH",              "%{_prefix}/include")
-prepend_path("FPATH",              "%{_prefix}/include")
-prepend_path("INFOPATH",           "%{_prefix}/share/info")
-prepend_path("LD_LIBRARY_PATH",    "%{_prefix}/lib")
-prepend_path("LIBRARY_PATH",       "%{_prefix}/lib")
-prepend_path("MANPATH",            "%{_prefix}/share/man")
-prepend_path("PKG_CONFIG_PATH",    "%{_prefix}/lib/pkgconfig")
+setenv("OMA_HOME",                  "%{_prefix}")
+prepend_path("PATH",                "%{_prefix}/bin")
+prepend_path("LD_LIBRARY_PATH",     "%{_prefix}/lib")
+prepend_path("LIBRARY_PATH",        "%{_prefix}/lib")
 EOF
+
 
 #------------------- App data file
 cat > $FASRCSW_DEV/appdata/%{modulename}.%{type}.dat <<EOF
@@ -313,8 +287,6 @@ buildcomments       : %{buildcomments}
 requestor           : %{requestor}
 requestref          : %{requestref}
 EOF
-
-
 
 #------------------- %%files (there should be no need to change this ) --------
 

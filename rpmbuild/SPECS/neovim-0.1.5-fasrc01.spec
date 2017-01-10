@@ -30,14 +30,14 @@ Packager: %{getenv:FASRCSW_AUTHOR}
 # rpm gets created, so this stores it separately for later re-use); do not 
 # surround this string with quotes
 #
-%define summary_static SWIG is a software development tool that connects programs written in C and C++ with a variety of high-level programming languages.
+%define summary_static Vim-fork focused on extensibility and agility
 Summary: %{summary_static}
 
 #
 # enter the url from where you got the source; change the archive suffix if 
 # applicable
 #
-URL: http://sourceforge.net/projects/swig/files/swig/swig-3.0.3/swig-3.0.3.tar.gz
+URL: https://github.com/neovim/neovim/archive/v0.1.5.tar.gz 
 Source: %{name}-%{version}.tar.gz
 
 #
@@ -73,11 +73,11 @@ Prefix: %{_prefix}
 %define mpi %(if [[ %{getenv:TYPE} == "MPI" ]]; then if [[ -n "%{getenv:FASRCSW_MPIS}" ]]; then echo "%{getenv:FASRCSW_MPIS}"; fi; else echo ""; fi)
 
 
-%define builddependencies Anaconda/1.9.2-fasrc01 pcre/8.37-fasrc01
-%define rundependencies %{builddependencies}
+%define builddependencies libuv/1.9.1-fasrc01 cmake/2.8.12.2-fasrc02 curl/7.45.0-fasrc01
+%define rundependencies libuv/1.9.1-fasrc01 
 %define buildcomments %{nil}
-%define requestor %{nil}
-%define requestref %{nil}
+%define requestor Malte Esders <malte.esders@gmail.com>
+%define requestref RCRT:105459
 
 # apptags
 # For aci-ref database use aci-ref-app-category and aci-ref-app-tag namespaces and separate tags with a semi-colon
@@ -94,7 +94,12 @@ Prefix: %{_prefix}
 # NOTE! INDICATE IF THERE ARE CHANGES FROM THE NORM TO THE BUILD!
 #
 %description
-SWIG is a software development tool that connects programs written in C and C++ with a variety of high-level programming languages. This module has been installed by Plamen G. Krastev.
+Neovim is a project that seeks to aggressively refactor vim source code in order to achieve the following goals:
+
+- Simplify maintenance to improve the speed that bug fixes and features get merged.
+- Split the work among multiple developers.
+- Enable the implementation of new/modern user interfaces without any modifications to the core source.
+- Improve the extensibility power with a new plugin architecture based on coprocesses. Plugins will be written in any programming language without any explicit support from the editor.
 
 #------------------- %%prep (~ tar xvf) ---------------------------------------
 
@@ -140,24 +145,7 @@ umask 022
 cd "$FASRCSW_DEV"/rpmbuild/BUILD/%{name}-%{version}
 
 
-./configure --prefix=%{_prefix} \
-	--program-prefix= \
-	--exec-prefix=%{_prefix} \
-	--bindir=%{_prefix}/bin \
-	--sbindir=%{_prefix}/sbin \
-	--sysconfdir=%{_prefix}/etc \
-	--datadir=%{_prefix}/share \
-	--includedir=%{_prefix}/include \
-	--libdir=%{_prefix}/lib64 \
-	--libexecdir=%{_prefix}/libexec \
-	--localstatedir=%{_prefix}/var \
-	--sharedstatedir=%{_prefix}/var/lib \
-	--mandir=%{_prefix}/share/man \
-	--infodir=%{_prefix}/share/info
-
-#if you are okay with disordered output, add %%{?_smp_mflags} (with only one 
-#percent sign) to build in parallel
-make %{?_smp_mflags}
+make CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX:PATH=%{_prefix}"
 
 
 
@@ -281,6 +269,7 @@ end
 
 
 ---- environment changes (uncomment what is relevant)
+setenv("NEOVIM_HOME",              "%{_prefix}")
 prepend_path("PATH",               "%{_prefix}/bin")
 prepend_path("MANPATH",            "%{_prefix}/share/man")
 EOF
